@@ -3,9 +3,9 @@ import os
 import json
 import asyncio
 
-VERSION = "0.5.0"
-SETTINGS_LOCATION = "~/.config/powertools.json"
-LOG_LOCATION = "/tmp/powertools.log"
+VERSION = "0.0.1"
+SETTINGS_LOCATION = "~/.config/settings.json"
+LOG_LOCATION = "/tmp/ayaneoptools.log"
 FANTASTIC_INSTALL_DIR = "~/homebrew/plugins/Fantastic"
 
 import logging
@@ -18,7 +18,7 @@ logging.basicConfig(
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-logging.info(f"PowerTools v{VERSION} https://github.com/NGnius/PowerTools")
+logging.info(f"Aya Neo Power Tools v{VERSION} https://github.com/pastaq/Aya-Neo-Power-Tools")
 startup_time = time.time()
 
 class CPU:
@@ -234,13 +234,13 @@ class Plugin:
     # Battery stuff
 
     async def get_charge_now(self) -> int:
-        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/charge_now", amount=-1).strip())
+        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_now", amount=-1).strip())
 
     async def get_charge_full(self) -> int:
-        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/charge_full", amount=-1).strip())
+        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full", amount=-1).strip())
 
     async def get_charge_design(self) -> int:
-        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/charge_full_design", amount=-1).strip())
+        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full_design", amount=-1).strip())
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):

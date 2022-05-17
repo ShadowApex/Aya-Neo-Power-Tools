@@ -1,12 +1,12 @@
 {
-    "name": "Power Tools",
-    "author": "NGnius",
+    "name": "Aya Neo Power Tools",
+    "author": "Derek J. Clark",
     "main_view_html": "main_view.html",
     "tile_view_html": "",
     "flags": ["root", "_debug"],
     "publish": {
         "discord_id": "106537989684887552",
-        "description": "Power tweaks for power users",
+        "description": "Power Management for the Aya Neo family of devices",
         "tags": [ "utility", "power-management" ]
     }
 }
