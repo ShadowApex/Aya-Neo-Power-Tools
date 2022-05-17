@@ -38,18 +38,25 @@ class Plugin:
         return True
 
     async def get_gpu_power(self, power_number: int) -> int:
-        return read_gpu_ppt(power_number)
-
+        power = read_gpu_ppt(power_number)
+        print("GPU "+power_number+" Level: ", power)
+        return(power)
     # Battery stuff
 
     async def get_charge_now(self) -> int:
-        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_now", amount=-1).strip())
+        now =int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_now", amount=-1).strip())
+        print("Charge now: ", now)
+        return now
 
     async def get_charge_full(self) -> int:
-        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full", amount=-1).strip())
+        full = int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full", amount=-1).strip())
+        print("Full Charge: ", full)
+        return full
 
     async def get_charge_design(self) -> int:
-        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full_design", amount=-1).strip())
+        design = int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full_design", amount=-1).strip())
+        print("Design Power: ", design)
+        return design
 
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
