@@ -3,11 +3,13 @@ import os
 import json
 import asyncio
 
+from subprocess import Popen, PIPE, STDOUT
+
 VERSION = "0.0.1"
 SETTINGS_LOCATION = "~/.config/settings.json"
 LOG_LOCATION = "/tmp/ayaneoptools.log"
 FANTASTIC_INSTALL_DIR = "~/homebrew/plugins/Fantastic"
-
+HOME_DIR = os.getenv('HOME')
 import logging
 
 logging.basicConfig(
@@ -31,33 +33,23 @@ class Plugin:
         return VERSION
 
     # GPU stuff
-
-    async def set_gpu_power(self, value: int, power_number: int) -> bool:
+    async def set_gpu_prop(self, value: int, prop: str) -> bool:
         self.modified_settings = True
-        write_gpu_ppt(power_number, value)
+        write_gpu_prop(prop, value)
         return True
 
-    async def get_gpu_power(self, power_number: int) -> int:
-        power = read_gpu_ppt(power_number)
-        print("GPU "+power_number+" Level: ", power)
-        return(power)
-    # Battery stuff
+    async def get_gpu_prop(self, prop: str) -> int:
+        return read_gpu_prop(prop)
 
+    # Battery stuff
     async def get_charge_now(self) -> int:
-        now =int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_now", amount=-1).strip())
-        print("Charge now: ", now)
-        return now
+        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_now", amount=-1).strip())
 
     async def get_charge_full(self) -> int:
-        full = int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full", amount=-1).strip())
-        print("Full Charge: ", full)
-        return full
+        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full", amount=-1).strip())
 
     async def get_charge_design(self) -> int:
-        design = int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full_design", amount=-1).strip())
-        print("Design Power: ", design)
-        return design
-
+        return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full_design", amount=-1).strip())
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
@@ -78,9 +70,8 @@ class Plugin:
             self.persistent = True
             
             # GPU
-            write_gpu_ppt(1, settings["gpu"]["slowppt"])
-            write_gpu_ppt(2, settings["gpu"]["fastppt"])
-            
+            write_gpu_prop("b", settings["gpu"]["slowppt"])
+            write_gpu_prop("c", settings["gpu"]["fastppt"])
 
     # called from main_view::onViewReady
     async def on_ready(self):
@@ -88,7 +79,6 @@ class Plugin:
         logging.info(f"Front-end initialised {delta}s after startup")
 
     # persistence
-
     async def get_persistent(self) -> bool:
         return self.persistent
 
@@ -105,8 +95,8 @@ class Plugin:
 
     def current_gpu_settings(self) -> dict:
         settings = dict()
-        settings["slowppt"] = read_gpu_ppt(1)
-        settings["fastppt"] = read_gpu_ppt(2)
+        settings["slowppt"] = read_gpu_prop("PPT LIMIT SLOW")
+        settings["fastppt"] = read_gpu_prop("PPT LIMIT FAST")
         return settings
 
     def save_settings(self):
@@ -114,19 +104,29 @@ class Plugin:
         logging.info(f"Saving settings to file: {settings}")
         write_json(SETTINGS_LOCATION, settings)
 
+def read_gpu_prop(prop: str) -> int:
+    val = 0
 
+    # Gets the current setting for the property requested
+    args = ("sudo "+HOME_DIR+"/homebrew/plugins/Aya-Neo-Power-Tools/bin/ryzenadj --info")
+    ryzenadj = Popen(args, shell=True, stdout=PIPE, stderr=STDOUT)
+    output = ryzenadj.stdout.read()
+    all_props = output.split(b'\n')
 
-# these are stateless (well, the state is not saved internally) functions, so there's no need for these to be called like a class method
+    for prop_row in all_props:
+        current_row = str(prop_row)
+        if prop in current_row:
+            row_list = current_row.split("|")
+            val = int(float(row_list[2].strip()))
+            break
 
-def gpu_power_path(power_number: int) -> str:
-    return f"/sys/class/hwmon/hwmon4/power{power_number}_cap"
+    return val
 
-def read_gpu_ppt(power_number: int) -> int:
-    return read_sys_int(gpu_power_path(power_number))
+def write_gpu_prop(prop: str, value: int):
+    args = ("sudo "+HOME_DIR+"/homebrew/plugins/Aya-Neo-Power-Tools/bin/ryzenadj -"+prop+" "+str(value))
+    ryzenadj = Popen(args, shell=True, stdout=PIPE, stderr=STDOUT)
+    output = ryzenadj.stdout.read()
 
-def write_gpu_ppt(power_number:int, value: int):
-    write_to_sys(gpu_power_path(power_number), value)
-    
 def write_to_sys(path, value: int):
     with open(path, mode="w") as f:
         f.write(str(value))
