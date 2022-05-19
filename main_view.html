@@ -41,20 +41,28 @@
             function getPersistent() {
                 return call_plugin_method("get_persistent", {});
             }
-            
+
+	    function getTDPNotches() {
+		return call_plugin_method("get_tdp_notches", {});
+	    }
+
+	    function getSysType() {
+		return call_plugin_method("get_sys_type", {});
+	    }
+
             // other logic
-            
+
             async function onReady() {
                 await onViewReady();
+                await onReadyGPU();
+                await updateBatteryStats();
                 await updateVersion();
-		await updateBatteryStats();
-		await onReadyGPU();
                 setToggleState(document.getElementById("persistToggle"), await getPersistent());
                 window.setInterval(function() {updateBatteryStats().then(_ => {})}, 5000);
             }
 
             const TOGGLE_ON_CLASS = "gamepaddialog_On_3ld7T";
-            
+
             function setToggleState(toggle, state) {
                 if (state && !toggle.classList.contains(TOGGLE_ON_CLASS)) {
                     toggle.classList.add(TOGGLE_ON_CLASS);
@@ -64,66 +72,89 @@
                     toggle.classList.remove(TOGGLE_ON_CLASS);
                 }
             }
-            
+
             function getToggleState(toggle) {
                 return toggle.classList.contains(TOGGLE_ON_CLASS);
-            }
+	    }
 
 	    async function updateBatteryStats() {
-                //console.log("Updating battery stats");
+                //console.log("Updating battery stats")
                 let batCapacityNow = document.getElementById("batCapacityNow");
                 let batCapacityFull = document.getElementById("batCapacityFull");
+                let sysIDLab = document.getElementById("sysID_Lab");
                 let chargeNow = await getChargeNow();
                 let chargeFull = await getChargeFull();
                 let chargeDesign = await getChargeDesign();
+                let sysID = await getSysType();
                 batCapacityNow.innerText = (7.7 * chargeNow / 1000000).toFixed(2).toString() + " Wh (" + (100 * chargeNow / chargeFull).toFixed(0).toString() + "%)";
                 batCapacityFull.innerText = (7.7 * chargeFull / 1000000).toFixed(2).toString() + " Wh (" + (100 * chargeFull / chargeDesign).toFixed(0).toString() + "%)";
-            }
+                sysIDLab.innerText = (sysID).toString();
+	    }
 
             async function onReadyGPU() {
-                let current_tdp = await getGPUProp("PPT LIMIT SLOW");
-                if (current_tdp = 5) {
-                    selectNotch("TDPNotch", 0, 7);
-                } else if (current_tdp = 10) {
-                    selectNotch("TDPNotch", 1, 7);
-                } else if (current_tdp = 12) {
-                    selectNotch("TDPNotch", 2, 7);
-                } else if (current_tdp = 14) {
-                    selectNotch("TDPNotch", 3, 7);
-                } else if (current_tdp = 16) {
-                    selectNotch("TDPNotch", 4, 7);
-                } else if (current_tdp = 18) {
-                    selectNotch("TDPNotch", 5, 7);
-                } else if (current_tdp = 20) {
-                    selectNotch("TDPNotch", 6, 7);
-                }
+                // Get TDP values for this model and set the slider label values.
+                let tdp_notches = await getTDPNotches();
+                let notch0Lab = document.getElementById("TDPNotch0_Lab");
+                notch0Lab.innerText = tdp_notches["tdp_notch0_val"].toString();
+                let notch1Lab = document.getElementById("TDPNotch1_Lab");
+                notch1Lab.innerText = tdp_notches["tdp_notch1_val"].toString();
+                let notch2Lab = document.getElementById("TDPNotch2_Lab");
+                notch2Lab.innerText = tdp_notches["tdp_notch2_val"].toString();
+                let notch3Lab = document.getElementById("TDPNotch3_Lab");
+                notch3Lab.innerText = tdp_notches["tdp_notch3_val"].toString();
+                let notch4Lab = document.getElementById("TDPNotch4_Lab");
+                notch4Lab.innerText = tdp_notches["tdp_notch4_val"].toString();
+                let notch5Lab = document.getElementById("TDPNotch5_Lab");
+                notch5Lab.innerText = tdp_notches["tdp_notch5_val"].toString();
+                let notch6Lab = document.getElementById("TDPNotch6_Lab");
+                notch6Lab.innerText = tdp_notches["tdp_notch6_val"].toString();
 
+                let current_tdp = await getGPUProp("PPT LIMIT FAST");
+                let tdp_set = Object.keys(tdp_notches).find(key => tdp_notches[key] === current_tdp);
+                if (tdp_set = "tdp_notch0_val") {
+                    selectNotch("TDPNotch", 0, 7);
+                } else if (tdp_set = "tdp_notch1_val") {
+                    selectNotch("TDPNotch", 1, 7);
+                } else if (tdp_set = "tdp_notch2_val") {
+                    selectNotch("TDPNotch", 2, 7);
+                } else if (tdp_set = "tdp_notch3_val") {
+                    selectNotch("TDPNotch", 3, 7);
+                } else if (tdp_set = "tdp_notch4_val") {
+                    selectNotch("TDPNotch", 4, 7);
+                } else if (tdp_set = "tdp_notch5_val") {
+                    selectNotch("TDPNotch", 5, 7);
+                } else if (tdp_set = "tdp_notch6_val") {
+                   selectNotch("TDPNotch", 6, 7);
+		} else {
+                   selectNotch("TDPNotch", 3, 7);
+                }
             }
 
             async function onSetTDPNotch(index) {
+		let tdp_notches = await getTDPNotches();
                 const ROOT_ID = "TDPNotch";
                 selectNotch(ROOT_ID, index, 7);
                 if (index == 0) {
-                    await setGPUProp(7000, "b");
-                    await setGPUProp(5000, "c");
+                    await setGPUProp(tdp_notches["tdp_notch0_val"], "b");
+                    await setGPUProp(tdp_notches["tdp_notch0_val"]-2, "c");
                 } else if (index == 1) {
-                    await setGPUProp(10000, "b");
-                    await setGPUProp(8000, "c");
+                    await setGPUProp(tdp_notches["tdp_notch1_val"], "b");
+                    await setGPUProp(tdp_notches["tdp_notch1_val"]-2, "c");
                 } else if (index == 2) {
-                    await setGPUProp(12000, "b");
-                    await setGPUProp(10000, "c");
+                    await setGPUProp(tdp_notches["tdp_notch2_val"], "b");
+                    await setGPUProp(tdp_notches["tdp_notch2_val"]-2, "c");
                 } else if (index == 3) {
-                    await setGPUProp(14000, "b");
-                    await setGPUProp(12000, "c");
+                    await setGPUProp(tdp_notches["tdp_notch3_val"], "b");
+                    await setGPUProp(tdp_notches["tdp_notch3_val"]-2, "c");
                 } else if (index == 4) {
-                    await setGPUProp(16000, "b");
-                    await setGPUProp(14000, "c");
+                    await setGPUProp(tdp_notches["tdp_notch4_val"], "b");
+                    await setGPUProp(tdp_notches["tdp_notch4_val"]-2, "c");
                 } else if (index == 5) {
-                    await setGPUProp(18000, "b");
-                    await setGPUProp(16000, "c");
+                    await setGPUProp(tdp_notches["tdp_notch5_val"], "b");
+                    await setGPUProp(tdp_notches["tdp_notch5_val"]-2, "c");
                 } else if (index == 6) {
-                    await setGPUProp(20000, "b");
-                    await setGPUProp(18000, "c");
+                    await setGPUProp(tdp_notches["tdp_notch6_val"], "b");
+                    await setGPUProp(tdp_notches["tdp_notch6_val"]-2, "c");
                 }
             }
 
@@ -160,7 +191,7 @@
                     versionCount += 1;
                 }
             }
-            
+
         </script>
         <style type="text/css" media="screen"></style>
     </head>
@@ -168,9 +199,13 @@
 	<!-- Battery Info -->
 	<div class="quickaccesscontrols_PanelSection_2C0g0" style="padding:0px 4px;" onclick="updateBatteryStats()" style="margin-bottom:0px;">
             <div class="quickaccesscontrols_PanelSectionTitle_2iFf9">
+	    </div>
+	    <div class="quickaccesscontrols_PanelSectionTitle_2iFf9">
+                <div class="gamepaddialog_FieldLabel_3b0U-"></div>
+	    </div>
             </div>
             <div class="quickaccesscontrols_PanelSectionTitle_2iFf9">
-                <div class="quickaccesscontrols_Text_1hJkB">Battery</div>
+                <div id="sysID_Lab" class="quickaccesscontrols_Text_1hJkB">Battery</div>
             </div>
             <div class="Panel Focusable" tabindex="0">
                 <div class="quickaccesscontrols_PanelSectionRow_2VQ88">
@@ -211,31 +246,31 @@
                 <div class="gamepadslider_SliderNotchContainer_2N-a5 Panel Focusable">
                     <div class="gamepadslider_SliderNotch_3x6ve">
                         <div id="TDPNotch0" class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S" onclick='onSetTDPNotch(0)'></div>
-                        <div class="gamepadslider_SliderNotchLabel_u_sH1">7</div>
+			<div id="TDPNotch0_Lab" class="gamepadslider_SliderNotchLabel_u_sH1"></div>
                     </div>
                     <div class="gamepadslider_SliderNotch_3x6ve">
                         <div id="TDPNotch1" class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S" onclick='onSetTDPNotch(1)'></div>
-                        <div class="gamepadslider_SliderNotchLabel_u_sH1">10</div>
+			<div id="TDPNotch1_Lab" class="gamepadslider_SliderNotchLabel_u_sH1"></div>
                     </div>
                     <div class="gamepadslider_SliderNotch_3x6ve">
                         <div id="TDPNotch2" class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S" onclick='onSetTDPNotch(2)'></div>
-                        <div class="gamepadslider_SliderNotchLabel_u_sH1">12</div>
+			<div id="TDPNotch2_Lab" class="gamepadslider_SliderNotchLabel_u_sH1"></div>
                     </div>
                     <div class="gamepadslider_SliderNotch_3x6ve">
-                        <div id="TDPNotch3" class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S" onclick='onSetTDPNotch(3)'></div>
-                        <div class="gamepadslider_SliderNotchLabel_u_sH1">14</div>
+		        <div id="TDPNotch3" class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S" onclick='onSetTDPNotch(3)'></div>
+			<div id="TDPNotch3_Lab" class="gamepadslider_SliderNotchLabel_u_sH1"></div>
                     </div>
                     <div class="gamepadslider_SliderNotch_3x6ve">
                         <div id="TDPNotch4" class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S" onclick='onSetTDPNotch(4)'></div>
-                        <div class="gamepadslider_SliderNotchLabel_u_sH1">16</div>
+			<div id="TDPNotch4_Lab" class="gamepadslider_SliderNotchLabel_u_sH1"></div>
                     </div>
                     <div class="gamepadslider_SliderNotch_3x6ve">
                         <div id="TDPNotch5" class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S" onclick='onSetTDPNotch(5)'></div>
-                        <div class="gamepadslider_SliderNotchLabel_u_sH1">18</div>
+			<div id="TDPNotch5_Lab" class="gamepadslider_SliderNotchLabel_u_sH1"></div>
                     </div>
                     <div class="gamepadslider_SliderNotch_3x6ve">
                         <div id="TDPNotch6" class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S" onclick='onSetTDPNotch(6)'></div>
-                        <div class="gamepadslider_SliderNotchLabel_u_sH1">20</div>
+			<div id="TDPNotch6_Lab" class="gamepadslider_SliderNotchLabel_u_sH1"></div>
                     </div>
                 </div>
             </div>

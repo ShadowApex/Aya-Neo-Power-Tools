@@ -23,19 +23,79 @@ logger.setLevel(logging.INFO)
 logging.info(f"Aya Neo Power Tools v{VERSION} https://github.com/pastaq/Aya-Neo-Power-Tools")
 startup_time = time.time()
 
-
 class Plugin:
-    
+
     persistent = True
     modified_settings = False
-    
+    tdp_notches = {}
+    sys_id = None
+
+    async def get_tdp_notches(self):
+
+        # Variables used in the interface
+        self.sys_id = open("/sys/devices/virtual/dmi/id/product_name", "r").read().strip()
+
+        # Founders & 2021 MAX TDP 25W, increment by 3W
+        if self.sys_id in [
+                "AYANEO 2021",
+                "AYA NEO 2021",
+                "AYANEO FOUNDERS",
+                "AYA NEO FOUNDERS",
+                "AYANEO FOUNDER",
+                "AYA NEO FOUNDER",
+                ]:
+            self.tdp_notches["tdp_notch0_val"] = 7
+            self.tdp_notches["tdp_notch1_val"] = 10
+            self.tdp_notches["tdp_notch2_val"] = 13
+            self.tdp_notches["tdp_notch3_val"] = 16
+            self.tdp_notches["tdp_notch4_val"] = 19
+            self.tdp_notches["tdp_notch5_val"] = 22
+            self.tdp_notches["tdp_notch6_val"] = 25
+
+        # 2021 Pro MAX TDP 30W, increment by 3/4W
+        elif self.sys_id in [
+                "AYANEO 2021 Pro Retro Power",
+                "AYA NEO 2021 Pro Retro Power",
+                "AYANEO 2021 Pro",
+                "AYA NEO 2021 Pro",
+                ]:
+            self.tdp_notches["tdp_notch0_val"] = 7
+            self.tdp_notches["tdp_notch1_val"] = 10
+            self.tdp_notches["tdp_notch2_val"] = 14
+            self.tdp_notches["tdp_notch3_val"] = 18
+            self.tdp_notches["tdp_notch4_val"] = 22
+            self.tdp_notches["tdp_notch5_val"] = 26
+            self.tdp_notches["tdp_notch6_val"] = 30
+
+        # NEXT max TDP 32W, increment by 6/4W
+        elif self.sys_id in [
+                "NEXT",
+                "AYANEO NEXT",
+                "AYA NEO NEXT",
+                "NEXT Pro",
+                "AYANEO NEXT Pro",
+                "AYA NEO NEXT Pro",
+                ]:
+            self.tdp_notches["tdp_notch0_val"] = 7
+            self.tdp_notches["tdp_notch1_val"] = 10
+            self.tdp_notches["tdp_notch2_val"] = 14
+            self.tdp_notches["tdp_notch3_val"] = 18
+            self.tdp_notches["tdp_notch4_val"] = 22
+            self.tdp_notches["tdp_notch5_val"] = 28
+            self.tdp_notches["tdp_notch6_val"] = 32
+
+        return self.tdp_notches
+
     async def get_version(self) -> str:
         return VERSION
+
+    async def get_sys_type():
+        return self.sys_type
 
     # GPU stuff
     async def set_gpu_prop(self, value: int, prop: str) -> bool:
         self.modified_settings = True
-        write_gpu_prop(prop, value)
+        write_gpu_prop(prop, value, self.tdp_notches)
         return True
 
     async def get_gpu_prop(self, prop: str) -> int:
@@ -53,6 +113,7 @@ class Plugin:
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
+
         # startup: load & apply settings
         if os.path.exists(SETTINGS_LOCATION):
             settings = read_json(SETTINGS_LOCATION)
@@ -68,7 +129,7 @@ class Plugin:
             # apply settings
             logging.debug("Restoring settings from file")
             self.persistent = True
-            
+
             # GPU
             write_gpu_prop("b", settings["gpu"]["slowppt"])
             write_gpu_prop("c", settings["gpu"]["fastppt"])
@@ -122,7 +183,20 @@ def read_gpu_prop(prop: str) -> int:
 
     return val
 
-def write_gpu_prop(prop: str, value: int):
+def write_gpu_prop(prop: str, value: int, tdp_notches):
+
+    # Protect against exploits from JS at runtime.
+    if type(value) != int:
+        raise TypeError("TypeError. value is of type " +type(value)+", not 'int'")
+        return
+    elif value > tdp_notches["tdp_notch6_val"]:
+        raise ValueError("ValueError. value exceeds maximum allowed TDP.")
+        return
+    elif value < tdp_notches["tdp_notch0_val"]:
+        raise ValueError("ValueError. value exceeds minimum allowed TDP.")
+        return
+
+    value *= 1000
     args = ("sudo "+HOME_DIR+"/homebrew/plugins/Aya-Neo-Power-Tools/bin/ryzenadj -"+prop+" "+str(value))
     ryzenadj = Popen(args, shell=True, stdout=PIPE, stderr=STDOUT)
     output = ryzenadj.stdout.read()
