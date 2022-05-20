@@ -46,8 +46,8 @@
 		return call_plugin_method("get_tdp_notches", {});
 	    }
 
-	    function getSysType() {
-		return call_plugin_method("get_sys_type", {});
+	    function getSysID() {
+		return call_plugin_method("get_sys_id", {});
 	    }
 
             // other logic
@@ -85,7 +85,7 @@
                 let chargeNow = await getChargeNow();
                 let chargeFull = await getChargeFull();
                 let chargeDesign = await getChargeDesign();
-                let sysID = await getSysType();
+                let sysID = await getSysID();
                 batCapacityNow.innerText = (7.7 * chargeNow / 1000000).toFixed(2).toString() + " Wh (" + (100 * chargeNow / chargeFull).toFixed(0).toString() + "%)";
                 batCapacityFull.innerText = (7.7 * chargeFull / 1000000).toFixed(2).toString() + " Wh (" + (100 * chargeFull / chargeDesign).toFixed(0).toString() + "%)";
                 sysIDLab.innerText = (sysID).toString();
@@ -109,21 +109,22 @@
                 let notch6Lab = document.getElementById("TDPNotch6_Lab");
                 notch6Lab.innerText = tdp_notches["tdp_notch6_val"].toString();
 
+                //selectNotch("TDPNotch", 3, 7);
                 let current_tdp = await getGPUProp("PPT LIMIT FAST");
                 let tdp_set = Object.keys(tdp_notches).find(key => tdp_notches[key] === current_tdp);
-                if (tdp_set = "tdp_notch0_val") {
+                if (tdp_set === "tdp_notch0_val") {
                     selectNotch("TDPNotch", 0, 7);
-                } else if (tdp_set = "tdp_notch1_val") {
+                } else if (tdp_set === "tdp_notch1_val") {
                     selectNotch("TDPNotch", 1, 7);
-                } else if (tdp_set = "tdp_notch2_val") {
+                } else if (tdp_set === "tdp_notch2_val") {
                     selectNotch("TDPNotch", 2, 7);
-                } else if (tdp_set = "tdp_notch3_val") {
+                } else if (tdp_set === "tdp_notch3_val") {
                     selectNotch("TDPNotch", 3, 7);
-                } else if (tdp_set = "tdp_notch4_val") {
+                } else if (tdp_set === "tdp_notch4_val") {
                     selectNotch("TDPNotch", 4, 7);
-                } else if (tdp_set = "tdp_notch5_val") {
+                } else if (tdp_set === "tdp_notch5_val") {
                     selectNotch("TDPNotch", 5, 7);
-                } else if (tdp_set = "tdp_notch6_val") {
+                } else if (tdp_set === "tdp_notch6_val") {
                    selectNotch("TDPNotch", 6, 7);
 		} else {
                    selectNotch("TDPNotch", 3, 7);

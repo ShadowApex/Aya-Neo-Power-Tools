@@ -3,13 +3,13 @@ import os
 import json
 import asyncio
 
+from pathlib import Path
 from subprocess import Popen, PIPE, STDOUT
 
 VERSION = "0.0.1"
-SETTINGS_LOCATION = "~/.config/settings.json"
-LOG_LOCATION = "/tmp/ayaneoptools.log"
-FANTASTIC_INSTALL_DIR = "~/homebrew/plugins/Fantastic"
 HOME_DIR = os.getenv('HOME')
+SETTINGS_LOCATION = HOME_DIR+"/.config/neo_power_settings.json"
+LOG_LOCATION = "/tmp/neo_power_tools.log"
 import logging
 
 logging.basicConfig(
@@ -32,8 +32,8 @@ class Plugin:
 
     async def get_tdp_notches(self):
 
-        # Variables used in the interface
-        self.sys_id = open("/sys/devices/virtual/dmi/id/product_name", "r").read().strip()
+        if not self.sys_id:
+            self.sys_id = read_sys_id()
 
         # Founders & 2021 MAX TDP 25W, increment by 3W
         if self.sys_id in [
@@ -86,16 +86,19 @@ class Plugin:
 
         return self.tdp_notches
 
+    # Label Stuff
     async def get_version(self) -> str:
         return VERSION
 
-    async def get_sys_type():
-        return self.sys_type
+    async def get_sys_id(self) -> str:
+        if not self.sys_id:
+            self.sys_id = read_sys_id()
+        return self.sys_id
 
     # GPU stuff
     async def set_gpu_prop(self, value: int, prop: str) -> bool:
         self.modified_settings = True
-        write_gpu_prop(prop, value, self.tdp_notches)
+        write_gpu_prop(prop, value)
         return True
 
     async def get_gpu_prop(self, prop: str) -> int:
@@ -110,26 +113,26 @@ class Plugin:
 
     async def get_charge_design(self) -> int:
         return int(read_from_sys("/sys/class/hwmon/hwmon2/device/energy_full_design", amount=-1).strip())
-
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
 
         # startup: load & apply settings
         if os.path.exists(SETTINGS_LOCATION):
             settings = read_json(SETTINGS_LOCATION)
-            logging.debug(f"Loaded settings from {SETTINGS_LOCATION}: {settings}")
+            logging.info(f"Loaded settings from {SETTINGS_LOCATION}: {settings}")
         else:
             settings = None
-            logging.debug(f"Settings {SETTINGS_LOCATION} does not exist, skipped")
+            logging.info(f"Settings {SETTINGS_LOCATION} does not exist, skipped")
+
         if settings is None or settings["persistent"] == False:
-            logging.debug("Ignoring settings from file")
+            logging.info("Ignoring settings from file")
             self.persistent = False
 
         else:
             # apply settings
-            logging.debug("Restoring settings from file")
+            logging.info("Restoring settings from file")
             self.persistent = True
-
+            logging.info(settings)
             # GPU
             write_gpu_prop("b", settings["gpu"]["slowppt"])
             write_gpu_prop("c", settings["gpu"]["fastppt"])
@@ -141,10 +144,11 @@ class Plugin:
 
     # persistence
     async def get_persistent(self) -> bool:
+        print("We are persistent: ", self.persistent)
         return self.persistent
 
     async def set_persistent(self, enabled: bool):
-        logging.debug(f"Persistence is now: {enabled}")
+        logging.info(f"Persistence is now: {enabled}")
         self.persistent = enabled
         self.save_settings(self)
 
@@ -163,6 +167,10 @@ class Plugin:
     def save_settings(self):
         settings = self.current_settings(self)
         logging.info(f"Saving settings to file: {settings}")
+        if not os.path.exists(SETTINGS_LOCATION):
+            settings_file = Path(SETTINGS_LOCATION)
+            settings_file.touch()
+
         write_json(SETTINGS_LOCATION, settings)
 
 def read_gpu_prop(prop: str) -> int:
@@ -183,17 +191,11 @@ def read_gpu_prop(prop: str) -> int:
 
     return val
 
-def write_gpu_prop(prop: str, value: int, tdp_notches):
+def write_gpu_prop(prop: str, value: int):
 
     # Protect against exploits from JS at runtime.
     if type(value) != int:
         raise TypeError("TypeError. value is of type " +type(value)+", not 'int'")
-        return
-    elif value > tdp_notches["tdp_notch6_val"]:
-        raise ValueError("ValueError. value exceeds maximum allowed TDP.")
-        return
-    elif value < tdp_notches["tdp_notch0_val"]:
-        raise ValueError("ValueError. value exceeds minimum allowed TDP.")
         return
 
     value *= 1000
@@ -204,13 +206,16 @@ def write_gpu_prop(prop: str, value: int, tdp_notches):
 def write_to_sys(path, value: int):
     with open(path, mode="w") as f:
         f.write(str(value))
-    logging.debug(f"Wrote `{value}` to {path}")
+    logging.info(f"Wrote `{value}` to {path}")
 
 def read_from_sys(path, amount=1):
     with open(path, mode="r") as f:
         value = f.read(amount)
-        logging.debug(f"Read `{value}` from {path}")
+        logging.info(f"Read `{value}` from {path}")
         return value
+
+def read_sys_id() -> str:
+        return open("/sys/devices/virtual/dmi/id/product_name", "r").read().strip()
 
 def read_sys_int(path) -> int:
     return int(read_from_sys(path, amount=-1).strip())
