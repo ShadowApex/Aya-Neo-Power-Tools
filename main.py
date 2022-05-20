@@ -95,6 +95,11 @@ class Plugin:
             self.sys_id = read_sys_id()
         return self.sys_id
 
+    async def pass_thing(self, thing):
+        print("im in it")
+        logging.info(thing)
+        return True
+
     # GPU stuff
     async def set_gpu_prop(self, value: int, prop: str) -> bool:
         self.modified_settings = True

@@ -5,6 +5,10 @@
         <link rel="stylesheet" href="/steam_resource/css/library.css">
         <script src="/static/library.js"></script>
         <script>
+	    var tdpDown = false;
+            var left = 0;
+            var above = 0;
+            
             // Python functions
             function getVersion() {
                 return call_plugin_method("get_version", {});
@@ -49,16 +53,26 @@
 	    function getSysID() {
 		return call_plugin_method("get_sys_id", {});
 	    }
+	    
+            function passThing() {
+                return call_plugin_method("pass_thing", {"thing": thing});
+            }
 
             // other logic
 
             async function onReady() {
                 await onViewReady();
                 await onReadyGPU();
-                await updateBatteryStats();
                 await updateVersion();
                 setToggleState(document.getElementById("persistToggle"), await getPersistent());
                 window.setInterval(function() {updateBatteryStats().then(_ => {})}, 5000);
+                let tdpNotch = document.getElementById("TDPNotch");
+		//tdpNotch.addEventListener('mousemove', function(e) {
+		//    let left = e.offsetX;
+                //    let above = e.offsetY; 
+		//});
+	        //let succeed = await passThing(tdpNotch);
+                await updateBatteryStats();
             }
 
             const TOGGLE_ON_CLASS = "gamepaddialog_On_3ld7T";
@@ -112,19 +126,19 @@
                 //selectNotch("TDPNotch", 3, 7);
                 let current_tdp = await getGPUProp("PPT LIMIT FAST");
                 let tdp_set = Object.keys(tdp_notches).find(key => tdp_notches[key] === current_tdp);
-                if (tdp_set === "tdp_notch0_val") {
+                if (tdp_set == "tdp_notch0_val") {
                     selectNotch("TDPNotch", 0, 7);
-                } else if (tdp_set === "tdp_notch1_val") {
+                } else if (tdp_set == "tdp_notch1_val") {
                     selectNotch("TDPNotch", 1, 7);
-                } else if (tdp_set === "tdp_notch2_val") {
+                } else if (tdp_set == "tdp_notch2_val") {
                     selectNotch("TDPNotch", 2, 7);
-                } else if (tdp_set === "tdp_notch3_val") {
+                } else if (tdp_set == "tdp_notch3_val") {
                     selectNotch("TDPNotch", 3, 7);
-                } else if (tdp_set === "tdp_notch4_val") {
+                } else if (tdp_set == "tdp_notch4_val") {
                     selectNotch("TDPNotch", 4, 7);
-                } else if (tdp_set === "tdp_notch5_val") {
+                } else if (tdp_set == "tdp_notch5_val") {
                     selectNotch("TDPNotch", 5, 7);
-                } else if (tdp_set === "tdp_notch6_val") {
+                } else if (tdp_set == "tdp_notch6_val") {
                    selectNotch("TDPNotch", 6, 7);
 		} else {
                    selectNotch("TDPNotch", 3, 7);
@@ -157,6 +171,15 @@
                     await setGPUProp(tdp_notches["tdp_notch6_val"], "b");
                     await setGPUProp(tdp_notches["tdp_notch6_val"]-2, "c");
                 }
+            }
+
+	    async function onReleaseTDPNotch() {
+                let chargeNow = await getChargeFull();
+	    }
+
+            async function updateTDPNotch() {
+                let chargeNow = await getChargeNow();
+	        let succeed = await passThing(left);
             }
 
             function selectNotch(rootId, index, elements) {
@@ -234,10 +257,10 @@
         <!-- TDP -->
         <div class="gamepaddialog_Field_S-_La gamepaddialog_WithFirstRow_qFXi6 gamepaddialog_WithChildrenBelow_1u5FT gamepaddialog_VerticalAlignCenter_3XNvA gamepaddialog_InlineWrapShiftsChildrenBelow_pHUb6 gamepaddialog_ChildrenWidthFixed_1ugIU gamepaddialog_ExtraPaddingOnChildrenBelow_5UO-_ gamepaddialog_StandardPadding_XRBFu gamepaddialog_HighlightOnFocus_wE4V6 Panel Focusable">
             <div class="quickaccesscontrols_PanelSectionTitle_2iFf9">
-                <div class="quickaccesscontrols_Text_1hJkB">TDP</div>
+                <div class="quickaccesscontrols_Text_1hJkB">TDP Setting</div>
             </div>
             <div class="gamepaddialog_FieldChildren_14_HB">
-            <div id="TDPNotch" class="gamepadslider_SliderControlAndNotches_1Cccx Focusable" tabindex="0" style="--normalized-slider-value:0.33;">
+            <div id="TDPNotch" class="gamepadslider_SliderControlAndNotches_1Cccx Focusable" tabindex="0" style="--normalized-slider-value:0.33;" onMouseUp='onReleaseTDPNotch()' onMouseMove='updateTDPNotch()'>
                 <div class="gamepadslider_SliderControl_3o137">
                     <div class="gamepadslider_SliderTrack_Mq25N gamepadslider_SliderHasNotches_2XiAy "></div>
                     <div class="gamepadslider_SliderHandleContainer_1pQZi">
