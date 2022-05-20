@@ -72,7 +72,7 @@
         }, 5000);
         let tdpNotch = document.getElementById("TDPNotch");
         tdpNotch.onmousemove = (e) => updateTDPNotch(e, tdpNotch);
-        tdpNotch.onmouseup = (e) => onReleaseTDPNotch();
+        //tdpNotch.onmouseup = (e) => updateTDPNotch(e, tdpNotch);
         await updateBatteryStats();
       }
 
@@ -132,7 +132,6 @@
         let notch6Lab = document.getElementById("TDPNotch6_Lab");
         notch6Lab.innerText = tdp_notches["tdp_notch6_val"].toString();
 
-        //selectNotch("TDPNotch", 3, 7);
         let current_tdp = await getGPUProp("PPT LIMIT FAST");
         let tdp_set = Object.keys(tdp_notches).find(
           (key) => tdp_notches[key] === current_tdp
@@ -160,6 +159,7 @@
         let tdp_notches = await getTDPNotches();
         const ROOT_ID = "TDPNotch";
         selectNotch(ROOT_ID, index, 7);
+        let tdpNotch = document.getElementById(ROOT_ID);
         if (index == 0) {
           await setGPUProp(tdp_notches["tdp_notch0_val"], "b");
           await setGPUProp(tdp_notches["tdp_notch0_val"] - 2, "c");
@@ -184,27 +184,22 @@
         }
       }
 
-      async function onReleaseTDPNotch() {
-        let closest_notch = [0, 1];
-        for (let i = 0; i < TDP_NOTCHES; i++) {
-          let diff = Math.abs(tdpSliderVal - i / TDP_NOTCHES);
-          if (closest_notch[1] >= diff) {
-            closest_notch = [i, diff];
-          }
-        }
-        selectNotch("TDPNotch", closest_notch[0], TDP_NOTCHES);
-      }
-
       async function updateTDPNotch(e, tdpNotch) {
         tdpSliderVal = e.x / tdpNotch.scrollWidth;
-        tdpNotch.style = "--normalized-slider-value:" + tdpSliderVal + ";";
+        let closest_notch = Math.round(tdpSliderVal * TDP_NOTCHES - 1);
+	if (closest_notch > TDP_NOTCHES) {
+	  closest_notch = TDP_NOTCHES;
+        } else if (closest_notch < 0) {
+	  closest_notch = 0;
+	}
+        onSetTDPNotch(closest_notch);
       }
 
       function selectNotch(rootId, index, elements) {
         const ENABLED_CLASS = "gamepadslider_TickActive_1gnUV";
         let root = document.getElementById(rootId);
         root.style =
-          "--normalized-slider-value:" + index / (elements - 1) + ";";
+          "--normalized-slider-value:" + (index / (elements - 1)).toString() + ";";
         for (let i = 0; i < elements; i++) {
           let notch = document.getElementById(rootId + i);
           if (notch.classList.contains(ENABLED_CLASS) && i > index) {
@@ -254,7 +249,7 @@
       </div>
     </div>
     <div class="quickaccesscontrols_PanelSectionTitle_2iFf9">
-      <div id="sysID_Lab" class="quickaccesscontrols_Text_1hJkB">Battery</div>
+      <div id="sysID_Lab" class="quickaccesscontrols_Text_1hJkB"></div>
     </div>
     <div class="Panel Focusable" tabindex="0">
       <div class="quickaccesscontrols_PanelSectionRow_2VQ88">
@@ -322,7 +317,6 @@
                 <div
                   id="TDPNotch0"
                   class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
-                  onclick="onSetTDPNotch(0)"
                 ></div>
                 <div
                   id="TDPNotch0_Lab"
@@ -333,7 +327,6 @@
                 <div
                   id="TDPNotch1"
                   class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
-                  onclick="onSetTDPNotch(1)"
                 ></div>
                 <div
                   id="TDPNotch1_Lab"
@@ -344,7 +337,6 @@
                 <div
                   id="TDPNotch2"
                   class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
-                  onclick="onSetTDPNotch(2)"
                 ></div>
                 <div
                   id="TDPNotch2_Lab"
@@ -355,7 +347,6 @@
                 <div
                   id="TDPNotch3"
                   class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
-                  onclick="onSetTDPNotch(3)"
                 ></div>
                 <div
                   id="TDPNotch3_Lab"
@@ -366,7 +357,6 @@
                 <div
                   id="TDPNotch4"
                   class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
-                  onclick="onSetTDPNotch(4)"
                 ></div>
                 <div
                   id="TDPNotch4_Lab"
@@ -377,7 +367,6 @@
                 <div
                   id="TDPNotch5"
                   class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
-                  onclick="onSetTDPNotch(5)"
                 ></div>
                 <div
                   id="TDPNotch5_Lab"
@@ -388,7 +377,6 @@
                 <div
                   id="TDPNotch6"
                   class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
-                  onclick="onSetTDPNotch(6)"
                 ></div>
                 <div
                   id="TDPNotch6_Lab"
