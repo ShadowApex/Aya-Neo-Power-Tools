@@ -5,10 +5,9 @@
         <link rel="stylesheet" href="/steam_resource/css/library.css">
         <script src="/static/library.js"></script>
         <script>
-	    var tdpDown = false;
-            var left = 0;
-            var above = 0;
-            
+            const TDP_NOTCHES = 7 
+	    var tdpSliderVal = 0
+
             // Python functions
             function getVersion() {
                 return call_plugin_method("get_version", {});
@@ -67,11 +66,8 @@
                 setToggleState(document.getElementById("persistToggle"), await getPersistent());
                 window.setInterval(function() {updateBatteryStats().then(_ => {})}, 5000);
                 let tdpNotch = document.getElementById("TDPNotch");
-		//tdpNotch.addEventListener('mousemove', function(e) {
-		//    let left = e.offsetX;
-                //    let above = e.offsetY; 
-		//});
-	        //let succeed = await passThing(tdpNotch);
+		tdpNotch.onmousemove = e => updateTDPNotch(e, tdpNotch);
+		tdpNotch.onmouseup = e => onReleaseTDPNotch();
                 await updateBatteryStats();
             }
 
@@ -174,12 +170,19 @@
             }
 
 	    async function onReleaseTDPNotch() {
-                let chargeNow = await getChargeFull();
+                let closest_notch = [0, 1];
+		for (let i = 0; i < TDP_NOTCHES; i++) {
+		    let diff = Math.abs(tdpSliderVal - (i / TDP_NOTCHES));
+		    if (closest_notch[1] >= diff) {
+                        closest_notch = [i, diff];
+		    }
+		}
+		selectNotch("TDPNotch", closest_notch[0], TDP_NOTCHES);
 	    }
 
-            async function updateTDPNotch() {
-                let chargeNow = await getChargeNow();
-	        let succeed = await passThing(left);
+            async function updateTDPNotch(e, tdpNotch) {
+                tdpSliderVal = e.x / tdpNotch.scrollWidth;
+		tdpNotch.style = "--normalized-slider-value:" + tdpSliderVal + ";";
             }
 
             function selectNotch(rootId, index, elements) {
@@ -260,11 +263,11 @@
                 <div class="quickaccesscontrols_Text_1hJkB">TDP Setting</div>
             </div>
             <div class="gamepaddialog_FieldChildren_14_HB">
-            <div id="TDPNotch" class="gamepadslider_SliderControlAndNotches_1Cccx Focusable" tabindex="0" style="--normalized-slider-value:0.33;" onMouseUp='onReleaseTDPNotch()' onMouseMove='updateTDPNotch()'>
+		    <div id="TDPNotch" class="gamepadslider_SliderControlAndNotches_1Cccx Focusable" tabindex="0" style="--normalized-slider-value:0.33;">
                 <div class="gamepadslider_SliderControl_3o137">
-                    <div class="gamepadslider_SliderTrack_Mq25N gamepadslider_SliderHasNotches_2XiAy "></div>
-                    <div class="gamepadslider_SliderHandleContainer_1pQZi">
-                        <div class="gamepadslider_SliderHandle_2yVKj"></div>
+                    <div class="gamepadslider_SliderTrack_Mq25N gamepadslider_SliderHasNotches_2XiAy"></div>
+		    <div class="gamepadslider_SliderHandleContainer_1pQZi">
+                        <div id="TDPDot" class="gamepadslider_SliderHandle_2yVKj"></div>
                     </div>
                 </div>
                 <div class="gamepadslider_SliderNotchContainer_2N-a5 Panel Focusable">
