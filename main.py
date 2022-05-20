@@ -144,7 +144,6 @@ class Plugin:
 
     # persistence
     async def get_persistent(self) -> bool:
-        print("We are persistent: ", self.persistent)
         return self.persistent
 
     async def set_persistent(self, enabled: bool):
