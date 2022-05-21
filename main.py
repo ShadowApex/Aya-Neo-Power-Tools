@@ -128,12 +128,15 @@ class Plugin:
             ).strip()
         )
 
-    async def get_charge_design(self) -> int:
-        return int(
+    async def get_power_draw(self) -> int:
+        pd_in_mw = int(
             read_from_sys(
-                "/sys/class/hwmon/hwmon2/device/energy_full_design", amount=-1
+                "/sys/class/power_supply/BAT0/power_now", amount=-1
             ).strip()
         )
+
+        logging.info(pd_in_mw)
+        return pd_in_mw
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):

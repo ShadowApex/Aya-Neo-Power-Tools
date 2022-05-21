@@ -33,8 +33,8 @@
         return call_plugin_method("get_charge_full", {});
       }
 
-      function getChargeDesign() {
-        return call_plugin_method("get_charge_design", {});
+      function getPowerDraw() {
+        return call_plugin_method("get_power_draw", {});
       }
 
       function setPersistent(value) {
@@ -95,22 +95,18 @@
       async function updateBatteryStats() {
         //console.log("Updating battery stats")
         let batCapacityNow = document.getElementById("batCapacityNow");
-        let batCapacityFull = document.getElementById("batCapacityFull");
+        let batPowerDraw = document.getElementById("batPowerDraw");
         let sysIDLab = document.getElementById("sysID_Lab");
         let chargeNow = await getChargeNow();
         let chargeFull = await getChargeFull();
-        let chargeDesign = await getChargeDesign();
+        let powerDraw = await getPowerDraw();
         let sysID = await getSysID();
         batCapacityNow.innerText =
           ((7.7 * chargeNow) / 1000000).toFixed(2).toString() +
           " Wh (" +
           ((100 * chargeNow) / chargeFull).toFixed(0).toString() +
           "%)";
-        batCapacityFull.innerText =
-          ((7.7 * chargeFull) / 1000000).toFixed(2).toString() +
-          " Wh (" +
-          ((100 * chargeFull) / chargeDesign).toFixed(0).toString() +
-          "%)";
+        batPowerDraw.innerText = (powerDraw / 1000000).toString() + "W";
         sysIDLab.innerText = sysID.toString();
       }
 
@@ -198,8 +194,7 @@
       function selectNotch(rootId, index, elements) {
         const ENABLED_CLASS = "gamepadslider_TickActive_1gnUV";
         let root = document.getElementById(rootId);
-        root.style =
-          "--normalized-slider-value:" + (index / (elements - 1)).toString() + ";";
+        root.style = "--normalized-slider-value:" + (index/(elements-1)).toString() + ";";
         for (let i = 0; i < elements; i++) {
           let notch = document.getElementById(rootId + i);
           if (notch.classList.contains(ENABLED_CLASS) && i > index) {
@@ -258,7 +253,7 @@
           style="--indent-level: 0"
         >
           <div class="gamepaddialog_FieldLabelRow_H9WOq">
-            <div class="gamepaddialog_FieldLabel_3b0U-">Charge</div>
+            <div class="gamepaddialog_FieldLabel_3b0U-">System Charge</div>
             <div class="gamepaddialog_FieldChildren_14_HB">
               <div
                 class="gamepaddialog_LabelFieldValue_5Mylh"
@@ -272,11 +267,11 @@
           style="--indent-level: 0"
         >
           <div class="gamepaddialog_FieldLabelRow_H9WOq">
-            <div class="gamepaddialog_FieldLabel_3b0U-">Maximum</div>
+            <div class="gamepaddialog_FieldLabel_3b0U-">System Power Draw</div>
             <div class="gamepaddialog_FieldChildren_14_HB">
               <div
                 class="gamepaddialog_LabelFieldValue_5Mylh"
-                id="batCapacityFull"
+                id="batPowerDraw"
               ></div>
             </div>
           </div>
