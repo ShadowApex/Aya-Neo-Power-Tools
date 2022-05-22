@@ -29,10 +29,20 @@ startup_time = time.time()
 
 class Plugin:
 
-    persistent = True
     modified_settings = False
-    tdp_notches = {}
+    persistent = True
     sys_id = None
+    tdp_delta = 2
+    tdp_notches = {}
+
+    async def get_tdp_delta(self):
+        return self.tdp_delta
+
+    async def set_tdp_delta(self, new_delta):
+        logging.info("TDP Delta changed from "+str(self.tdp_delta)+" to "+str(new_delta))
+        self.tdp_delta = new_delta
+        self.modified_settings = True
+        return True
 
     async def get_tdp_notches(self):
 
@@ -106,8 +116,8 @@ class Plugin:
 
     # GPU stuff
     async def set_gpu_prop(self, value: int, prop: str) -> bool:
-        self.modified_settings = True
         write_gpu_prop(prop, value)
+        self.modified_settings = True
         return True
 
     async def get_gpu_prop(self, prop: str) -> int:
@@ -129,14 +139,14 @@ class Plugin:
         )
 
     async def get_power_draw(self) -> int:
-        pd_in_mw = int(
+        pd_in_uw = int(
             read_from_sys(
                 "/sys/class/power_supply/BAT0/power_now", amount=-1
             ).strip()
         )
 
-        logging.info(pd_in_mw)
-        return pd_in_mw
+        logging.info(pd_in_uw)
+        return pd_in_uw
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
@@ -161,6 +171,7 @@ class Plugin:
             # GPU
             write_gpu_prop("b", settings["gpu"]["slowppt"])
             write_gpu_prop("c", settings["gpu"]["fastppt"])
+            self.tdp_delta = settings["gpu"]["tdp_delta"]
 
     # called from main_view::onViewReady
     async def on_ready(self):
@@ -186,6 +197,7 @@ class Plugin:
         settings = dict()
         settings["slowppt"] = read_gpu_prop("PPT LIMIT SLOW")
         settings["fastppt"] = read_gpu_prop("PPT LIMIT FAST")
+        settings["tdp_delta"] = self.tdp_delta
         return settings
 
     def save_settings(self):
@@ -237,6 +249,7 @@ def write_gpu_prop(prop: str, value: int):
     )
     ryzenadj = Popen(args, shell=True, stdout=PIPE, stderr=STDOUT)
     output = ryzenadj.stdout.read()
+    logger.info(output)
 
 
 def write_to_sys(path, value: int):
