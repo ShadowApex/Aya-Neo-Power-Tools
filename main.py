@@ -34,6 +34,7 @@ class Plugin:
     sys_id = None
     tdp_delta = 2
     tdp_notches = {}
+    gpuclk_notches = {}
 
     async def get_tdp_delta(self):
         return self.tdp_delta
@@ -43,6 +44,62 @@ class Plugin:
         self.tdp_delta = new_delta
         self.modified_settings = True
         return True
+
+    async def get_gpuclk_notches(self):
+
+        if not self.sys_id:
+            self.sys_id = read_sys_id()
+
+        # Founders & 2021 MAX GPU CLK 1500, increment by 200Mhz
+        if self.sys_id in [
+            "AYANEO 2021",
+            "AYA NEO 2021",
+            "AYANEO FOUNDERS",
+            "AYA NEO FOUNDERS",
+            "AYANEO FOUNDER",
+            "AYA NEO FOUNDER",
+        ]:
+            self.gpuclk_notches["gpuclk_notch0_val"] = 200
+            self.gpuclk_notches["gpuclk_notch1_val"] = 400
+            self.gpuclk_notches["gpuclk_notch2_val"] = 600
+            self.gpuclk_notches["gpuclk_notch3_val"] = 800
+            self.gpuclk_notches["gpuclk_notch4_val"] = 1000
+            self.gpuclk_notches["gpuclk_notch5_val"] = 1200
+            self.gpuclk_notches["gpuclk_notch6_val"] = 1500
+
+        # 2021 PRO MAX GPU CLK 1750, increment by 250Mhz
+        elif self.sys_id in [
+            "AYANEO 2021 Pro Retro Power",
+            "AYA NEO 2021 Pro Retro Power",
+            "AYANEO 2021 Pro",
+            "AYA NEO 2021 Pro",
+        ]:
+            self.gpuclk_notches["gpuclk_notch0_val"] = 250
+            self.gpuclk_notches["gpuclk_notch1_val"] = 500
+            self.gpuclk_notches["gpuclk_notch2_val"] = 750
+            self.gpuclk_notches["gpuclk_notch3_val"] = 1000
+            self.gpuclk_notches["gpuclk_notch4_val"] = 1250
+            self.gpuclk_notches["gpuclk_notch5_val"] = 1500
+            self.gpuclk_notches["gpuclk_notch6_val"] = 1750
+
+        # NEXT MAX GPU CLK 2000, increment by 300Mhz
+        elif self.sys_id in [
+            "NEXT",
+            "AYANEO NEXT",
+            "AYA NEO NEXT",
+            "NEXT Pro",
+            "AYANEO NEXT Pro",
+            "AYA NEO NEXT Pro",
+        ]:
+            self.gpuclk_notches["gpuclk_notch0_val"] = 250
+            self.gpuclk_notches["gpuclk_notch1_val"] = 500
+            self.gpuclk_notches["gpuclk_notch2_val"] = 800
+            self.gpuclk_notches["gpuclk_notch3_val"] = 1100
+            self.gpuclk_notches["gpuclk_notch4_val"] = 1400
+            self.gpuclk_notches["gpuclk_notch5_val"] = 1700
+            self.gpuclk_notches["gpuclk_notch6_val"] = 2000
+
+        return self.gpuclk_notches
 
     async def get_tdp_notches(self):
 
@@ -169,6 +226,7 @@ class Plugin:
             self.persistent = True
             logging.info(settings)
             # GPU
+            write_gpu_prop("a", settings["gpu"]["stapm"])
             write_gpu_prop("b", settings["gpu"]["slowppt"])
             write_gpu_prop("c", settings["gpu"]["fastppt"])
             self.tdp_delta = settings["gpu"]["tdp_delta"]
@@ -195,6 +253,7 @@ class Plugin:
 
     def current_gpu_settings(self) -> dict:
         settings = dict()
+        settings["stapm"] = read_gpu_prop("STAPM LIMIT")
         settings["slowppt"] = read_gpu_prop("PPT LIMIT SLOW")
         settings["fastppt"] = read_gpu_prop("PPT LIMIT FAST")
         settings["tdp_delta"] = self.tdp_delta

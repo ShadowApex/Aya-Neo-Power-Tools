@@ -7,8 +7,10 @@
     <script>
       const TDP_DELTA_NOTCHES = 4;
       const TDP_NOTCHES = 7;
-      var currentTDPDeltaNotch = 0;
+      const GPUCLK_NOTCHES = 7;
+
       var currentTDPNotch = 0;
+      var gpuClkEnabled = False;
       var tdpDeltaSliderVal = 0;
       var tdpSliderVal = 0;
 
@@ -71,10 +73,11 @@
         await onViewReady();
         await onReadyGPU();
         await updateVersion();
-        setToggleState(
-          document.getElementById("persistToggle"),
-          await getPersistent()
-        );
+        await updateBatteryStats();
+        //setToggleState(
+        //  document.getElementById("persistToggle"),
+        //  await getPersistent()
+        //);
         window.setInterval(function () {
           updateBatteryStats().then((_) => {});
         }, 5000);
@@ -82,7 +85,6 @@
         tdpNotch.onmousemove = (e) => updateTDPNotch(e, tdpNotch);
         let tdpDeltaNotch = document.getElementById("TDPDeltaNotch");
         tdpDeltaNotch.onmousemove = (e) => updateTDPDeltaNotch(e, tdpDeltaNotch);
-        await updateBatteryStats();
       }
 
       const TOGGLE_ON_CLASS = "gamepaddialog_On_3ld7T";
@@ -143,57 +145,44 @@
         );
         if (tdp_set == "tdp_notch0_val") {
           selectNotch("TDPNotch", 0, 7);
-	  currentTDPNotch = 0
+	  currentTDPNotch = 0;
         } else if (tdp_set == "tdp_notch1_val") {
           selectNotch("TDPNotch", 1, 7);
-	  currentTDPNotch = 1
+	  currentTDPNotch = 1;
         } else if (tdp_set == "tdp_notch2_val") {
           selectNotch("TDPNotch", 2, 7);
-	  currentTDPNotch = 2
+	  currentTDPNotch = 2;
         } else if (tdp_set == "tdp_notch3_val") {
           selectNotch("TDPNotch", 3, 7);
-	  currentTDPNotch = 3
+	  currentTDPNotch = 3;
         } else if (tdp_set == "tdp_notch4_val") {
           selectNotch("TDPNotch", 4, 7);
-	  currentTDPNotch = 4
+	  currentTDPNotch = 4;
         } else if (tdp_set == "tdp_notch5_val") {
           selectNotch("TDPNotch", 5, 7);
-	  currentTDPNotch = 5
+	  currentTDPNotch = 5;
         } else if (tdp_set == "tdp_notch6_val") {
           selectNotch("TDPNotch", 6, 7);
-	  currentTDPNotch = 6
+	  currentTDPNotch = 6;
         } else {
           selectNotch("TDPNotch", 3, 7);
-	  currentTDPNotch = 3
+	  currentTDPNotch = 3;
         }
         
 	let tdp_delta = await getTDPDelta();
         selectNotch("TDPDeltaNotch", tdp_delta-2, 4);
-	currentTDPDeltaNotch = tdp_delta
 	
       }
 
       async function updateTDPNotch(e, tdpNotch) {
-        tdpSliderVal = e.x / tdpNotch.scrollWidth;
-        let closest_notch = Math.round(tdpSliderVal * TDP_NOTCHES - 1);
-	if (closest_notch >= TDP_NOTCHES) {
-	  closest_notch = TDP_NOTCHES - 1;
-        } else if (closest_notch < 0) {
-	  closest_notch = 0;
-	}
-        onSetTDPNotch(closest_notch);
+        let closestNotch = getClosestNotch(e, tdpNotch, TDP_NOTCHES);
+        onSetTDPNotch(closestNotch);
       }
       
       async function updateTDPDeltaNotch(e, tdpDeltaNotch) {
-        tdpSliderVal = e.x / tdpDeltaNotch.scrollWidth;
-        let closest_notch = Math.round(tdpSliderVal * TDP_DELTA_NOTCHES - 1);
-        if (closest_notch >= TDP_DELTA_NOTCHES) {
-        closest_notch = TDP_DELTA_NOTCHES - 1;
-        } else if (closest_notch < 0) {
-        closest_notch = 0;
-        }
-        await setTDPDelta(closest_notch +2);
-	selectNotch("TDPDeltaNotch", closest_notch, TDP_DELTA_NOTCHES);
+        let closestNotch = getClosestNotch(e, tdpDeltaNotch, TDP_DELTA_NOTCHES);
+	await setTDPDelta(closestNotch +2);
+	selectNotch("TDPDeltaNotch", closestNotch, TDP_DELTA_NOTCHES);
 	onSetTDPNotch(currentTDPNotch);
       }
 
@@ -235,6 +224,17 @@
         }
       }
 
+      function getClosestNotch(e, root, elements) {		  
+        sliderVal = e.x / root.scrollWidth;
+        let closestNotch = Math.round(sliderVal * elements - 1);
+        if (closestNotch >= elements) {
+          closestNotch = elements - 1;
+        } else if (closestNotch < 0) {
+          closestNotch = 0;
+        }
+	return closestNotch;
+      }
+
       function selectNotch(rootId, index, elements) {
         const ENABLED_CLASS = "gamepadslider_TickActive_1gnUV";
         let root = document.getElementById(rootId);
@@ -256,18 +256,12 @@
         setToggleState(toggle, !isActive);
       }
 
-      let versionCount = -1;
       async function updateVersion() {
         let version = await getVersion();
         let target = document.getElementById("versionStr");
         target.innerText = "v" + version;
-        if (versionCount >= 9) {
-          target.innerText += " by Derek J. Clark ";
-          versionCount = 0;
-        } else {
-          versionCount += 1;
-        }
       }
+
     </script>
     <style type="text/css" media="screen"></style>
   </head>
@@ -341,9 +335,9 @@
             tabindex="0"
             style="--normalized-slider-value: 0.33"
           >
-          <div class="gamepaddialog_FieldDescription_2OJfk">
-            GPU TDP
-          </div>
+            <div class="gamepaddialog_FieldDescription_2OJfk">
+              GPU TDP
+            </div>
             <div class="gamepadslider_SliderControl_3o137">
               <div
                 class="gamepadslider_SliderTrack_Mq25N gamepadslider_SliderHasNotches_2XiAy"
@@ -499,6 +493,124 @@
               </div>
             </div>
           </div>
+	</div>
+      </div>
+      <div
+        class="gamepaddialog_Field_S-_La gamepaddialog_WithFirstRow_qFXi6 gamepaddialog_WithChildrenBelow_1u5FT gamepaddialog_VerticalAlignCenter_3XNvA gamepaddialog_InlineWrapShiftsChildrenBelow_pHUb6 gamepaddialog_ChildrenWidthFixed_1ugIU gamepaddialog_ExtraPaddingOnChildrenBelow_5UO-_ gamepaddialog_StandardPadding_XRBFu gamepaddialog_HighlightOnFocus_wE4V6 Panel Focusable"
+      >
+        <div class="quickaccesscontrols_PanelSectionTitle_2iFf9">
+          <div class="quickaccesscontrols_Text_1hJkB">GPU Clock Settings</div>
+        </div>
+        <div class="gamepaddialog_FieldLabelRow_H9WOq">
+          <div class="gamepaddialog_FieldLabel_3b0U-">Fixed GPU Clock</div>
+          <div class="gamepaddialog_FieldChildren_14_HB">
+            <div
+              id="GPUCLKToggle"
+              tabindex="0"
+	      class="gamepaddialog_Toggle_24G4g Focusable"
+            >
+              <div class="gamepaddialog_ToggleRail_2JtC3"></div>
+              <div class="gamepaddialog_ToggleSwitch_3__OD"></div>
+            </div>
+          </div>
+        </div>
+        <div class="gamepaddialog_FieldDescription_2OJfk">
+          Enables setting a fixed GPU Clock to the below value. May cause system instability.
+        </div>
+        <div class="gamepaddialog_FieldChildren_14_HB">
+          <div
+            id="GPUCLKNotch"
+            class="gamepadslider_SliderControlAndNotches_1Cccx Focusable"
+            tabindex="0"
+            style="--normalized-slider-value: 0.33"
+          >
+            <div class="gamepaddialog_FieldDescription_2OJfk">
+              Fixed GPU CLK
+            </div>
+            <div class="gamepadslider_SliderControl_3o137">
+              <div
+                class="gamepadslider_SliderTrack_Mq25N gamepadslider_SliderHasNotches_2XiAy"
+              ></div>
+              <div class="gamepadslider_SliderHandleContainer_1pQZi">
+                <div id="GPUCLKDot" class="gamepadslider_SliderHandle_2yVKj"></div>
+              </div>
+            </div>
+            <div
+              class="gamepadslider_SliderNotchContainer_2N-a5 Panel Focusable"
+            >
+              <div class="gamepadslider_SliderNotch_3x6ve">
+                <div
+                  id="GPUCLKNotch0"
+                  class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
+                ></div>
+                <div
+                  id="GPUCLKNotch0_Lab"
+                  class="gamepadslider_SliderNotchLabel_u_sH1"
+                ></div>
+              </div>
+              <div class="gamepadslider_SliderNotch_3x6ve">
+                <div
+                  id="GPUCLKNotch1"
+                  class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
+                ></div>
+                <div
+                  id="GPUCLKNotch1_Lab"
+                  class="gamepadslider_SliderNotchLabel_u_sH1"
+                ></div>
+              </div>
+              <div class="gamepadslider_SliderNotch_3x6ve">
+                <div
+                  id="GPUCLKNotch2"
+                  class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
+                ></div>
+                <div
+                  id="GPUCLKNotch2_Lab"
+                  class="gamepadslider_SliderNotchLabel_u_sH1"
+                ></div>
+              </div>
+              <div class="gamepadslider_SliderNotch_3x6ve">
+                <div
+                  id="GPUCLKNotch3"
+                  class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
+                ></div>
+                <div
+                  id="GPUCLKNotch3_Lab"
+                  class="gamepadslider_SliderNotchLabel_u_sH1"
+                ></div>
+              </div>
+              <div class="gamepadslider_SliderNotch_3x6ve">
+                <div
+                  id="GPUCLKNotch4"
+                  class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
+                ></div>
+                <div
+                  id="GPUCLKNotch4_Lab"
+                  class="gamepadslider_SliderNotchLabel_u_sH1"
+                ></div>
+              </div>
+              <div class="gamepadslider_SliderNotch_3x6ve">
+                <div
+                  id="GPUCLKNotch5"
+                  class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
+                ></div>
+                <div
+                  id="GPUCLKNotch5_Lab"
+                  class="gamepadslider_SliderNotchLabel_u_sH1"
+                ></div>
+              </div>
+              <div class="gamepadslider_SliderNotch_3x6ve">
+                <div
+                  id="GPUCLKNotch6"
+                  class="gamepadslider_SliderNotchTick_Fv1Ht gamepadslider_TickActive_j418S"
+                ></div>
+                <div
+                  id="GPUCLKNotch6_Lab"
+                  class="gamepadslider_SliderNotchLabel_u_sH1"
+                ></div>
+              </div>
+            </div>
+          </div>
+	</div>
       </div>
     </div>
     <!-- PERSIST -->
