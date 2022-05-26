@@ -5,9 +5,10 @@
     <link rel="stylesheet" href="/steam_resource/css/library.css" />
     <script src="/static/library.js"></script>
     <script>
+      //const GPUCLK_NOTCHES = 7;
       const TDP_DELTA_NOTCHES = 4;
       const TDP_NOTCHES = 7;
-      const GPUCLK_NOTCHES = 7;
+      const TOGGLE_ON_CLASS = "gamepaddialog_On_3ld7T";
 
       var currentTDPNotch = 0;
       var gpuClkEnabled = False;
@@ -51,12 +52,20 @@
         return call_plugin_method("get_persistent", {});
       }
 
+      //function setGPUCLKTGL(value) {
+      //  return call_plugin_method("set_gpuclk_toggle", { enabled: value });
+      //}
+      
+      //function getGPUClkTGL() {
+      //  return call_plugin_method("get_gpuclk_toggle", {});
+      //}
+
+      //function getGPUClkNotches() {
+      //  return call_plugin_method("get_gpuclk_notches", {});
+      //}
+
       function getTDPNotches() {
         return call_plugin_method("get_tdp_notches", {});
-      }
-
-      function getSysID() {
-        return call_plugin_method("get_sys_id", {});
       }
 
       function getTDPDelta() {
@@ -67,6 +76,10 @@
 	return call_plugin_method("set_tdp_delta", {new_delta: new_delta});
       }
 
+      function getSysID() {
+        return call_plugin_method("get_sys_id", {});
+      }
+
       // other logic
 
       async function onReady() {
@@ -74,9 +87,13 @@
         await onReadyGPU();
         await updateVersion();
         await updateBatteryStats();
+        setToggleState(
+          document.getElementById("persistToggle"),
+          await getPersistent()
+        );
         //setToggleState(
-        //  document.getElementById("persistToggle"),
-        //  await getPersistent()
+        //  document.getElementById("GPUCLKToggle"),
+        //  await getGPUClkTGL()
         //);
         window.setInterval(function () {
           updateBatteryStats().then((_) => {});
@@ -85,9 +102,10 @@
         tdpNotch.onmousemove = (e) => updateTDPNotch(e, tdpNotch);
         let tdpDeltaNotch = document.getElementById("TDPDeltaNotch");
         tdpDeltaNotch.onmousemove = (e) => updateTDPDeltaNotch(e, tdpDeltaNotch);
+       // let gpuClkNotch = document.getElementById("GPUCLKNotch");
+       // gpuClkNotch.onmousemove = (e) => updateGPUClkNotch(e, gpuClkNotch);
       }
 
-      const TOGGLE_ON_CLASS = "gamepaddialog_On_3ld7T";
 
       function setToggleState(toggle, state) {
         if (state && !toggle.classList.contains(TOGGLE_ON_CLASS)) {
@@ -124,20 +142,20 @@
       async function onReadyGPU() {
         // Get TDP values for this model and set the slider label values.
         let tdp_notches = await getTDPNotches();
-        let notch0Lab = document.getElementById("TDPNotch0_Lab");
-        notch0Lab.innerText = tdp_notches["tdp_notch0_val"].toString();
-        let notch1Lab = document.getElementById("TDPNotch1_Lab");
-        notch1Lab.innerText = tdp_notches["tdp_notch1_val"].toString();
-        let notch2Lab = document.getElementById("TDPNotch2_Lab");
-        notch2Lab.innerText = tdp_notches["tdp_notch2_val"].toString();
-        let notch3Lab = document.getElementById("TDPNotch3_Lab");
-        notch3Lab.innerText = tdp_notches["tdp_notch3_val"].toString();
-        let notch4Lab = document.getElementById("TDPNotch4_Lab");
-        notch4Lab.innerText = tdp_notches["tdp_notch4_val"].toString();
-        let notch5Lab = document.getElementById("TDPNotch5_Lab");
-        notch5Lab.innerText = tdp_notches["tdp_notch5_val"].toString();
-        let notch6Lab = document.getElementById("TDPNotch6_Lab");
-        notch6Lab.innerText = tdp_notches["tdp_notch6_val"].toString();
+        let TDPNotch0Lab = document.getElementById("TDPNotch0_Lab");
+        TDPNotch0Lab.innerText = tdp_notches["tdp_notch0_val"].toString();
+        let TDPNotch1Lab = document.getElementById("TDPNotch1_Lab");
+        TDPNotch1Lab.innerText = tdp_notches["tdp_notch1_val"].toString();
+        let TDPNotch2Lab = document.getElementById("TDPNotch2_Lab");
+        TDPNotch2Lab.innerText = tdp_notches["tdp_notch2_val"].toString();
+        let TDPNotch3Lab = document.getElementById("TDPNotch3_Lab");
+        TDPNotch3Lab.innerText = tdp_notches["tdp_notch3_val"].toString();
+        let TDPNotch4Lab = document.getElementById("TDPNotch4_Lab");
+        TDPNotch4Lab.innerText = tdp_notches["tdp_notch4_val"].toString();
+        let TDPNotch5Lab = document.getElementById("TDPNotch5_Lab");
+        TDPNotch5Lab.innerText = tdp_notches["tdp_notch5_val"].toString();
+        let TDPNotch6Lab = document.getElementById("TDPNotch6_Lab");
+        TDPNotch6Lab.innerText = tdp_notches["tdp_notch6_val"].toString();
 
         let current_tdp = await getGPUProp("PPT LIMIT FAST");
         let tdp_set = Object.keys(tdp_notches).find(
@@ -172,6 +190,22 @@
 	let tdp_delta = await getTDPDelta();
         selectNotch("TDPDeltaNotch", tdp_delta-2, 4);
 	
+        //let gpuclk_notches = await getGPUClkNotches();
+        //let gpuClkNotch0Lab = document.getElementById("GPUCLKNotch0_Lab");
+        //gpuClkNotch0Lab.innerText = gpuclk_notches["gpuclk_notch0_val"].toString();
+        //let gpuClkNotch1Lab = document.getElementById("GPUCLKNotch1_Lab");
+        //gpuClkNotch1Lab.innerText = gpuclk_notches["gpuclk_notch1_val"].toString();
+        //let gpuClkNotch2Lab = document.getElementById("GPUCLKNotch2_Lab");
+        //gpuClkNotch2Lab.innerText = gpuclk_notches["gpuclk_notch2_val"].toString();
+        //let gpuClkNotch3Lab = document.getElementById("GPUCLKNotch3_Lab");
+        //gpuClkNotch3Lab.innerText = gpuclk_notches["gpuclk_notch3_val"].toString();
+        //let gpuClkNotch4Lab = document.getElementById("GPUCLKNotch4_Lab");
+        //gpuClkNotch4Lab.innerText = gpuclk_notches["gpuclk_notch4_val"].toString();
+        //let gpuClkNotch5Lab = document.getElementById("GPUCLKNotch5_Lab");
+        //gpuClkNotch5Lab.innerText = gpuclk_notches["gpuclk_notch5_val"].toString();
+        //let gpuClkNotch6Lab = document.getElementById("GPUCLKNotch6_Lab");
+        //gpuClkNotch6Lab.innerText = gpuclk_notches["gpuclk_notch6_val"].toString();
+
       }
 
       async function updateTDPNotch(e, tdpNotch) {
@@ -223,6 +257,46 @@
           await setGPUProp(tdp_notches["tdp_notch6_val"] + tdp_delta, "b");
         }
       }
+      
+      //async function updateGPUClkNotch(e, gpuClkNotch) {
+      //  let closestNotch = getClosestNotch(e, gpuClkNotch, GPUCLK_NOTCHES);
+      //  onSetGPUClkNotch(closestNotch);
+      //}
+
+      //async function onSetGPUClkNotch(index) {
+      //  let toggle = document.getElementById("GPUCLKToggle");
+      //  let isActive = getToggleState(toggle);
+      //  if (!isActive) {
+      //    return;
+      //  }
+      //   currentGPUClkNotch = index;
+      //   let gpuclk_notches = await getGPUClkNotches();
+      //   const ROOT_ID = "GPUCLKNotch";
+      //  selectNotch(ROOT_ID, index, 7);
+      //  let gpuClkNotch = document.getElementById(ROOT_ID);
+      //  if (index == 0) {
+      //    await setGPUProp(gpuclk_notches["gpuclk_notch0_val"], "-gfx-clk");
+      //  } else if (index == 1) {
+      //    await setGPUProp(gpuclk_notches["gpuclk_notch1_val"], "-gfx-clk");
+      //  } else if (index == 2) {
+      //    await setGPUProp(gpuclk_notches["gpuclk_notch2_val"], "-gfx-clk");
+      //  } else if (index == 3) {
+      //    await setGPUProp(gpuclk_notches["gpuclk_notch3_val"], "-gfx-clk");
+      //  } else if (index == 4) {
+      //    await setGPUProp(gpuclk_notches["gpuclk_notch4_val"], "-gfx-clk");
+      //  } else if (index == 5) {
+      //    await setGPUProp(gpuclk_notches["gpuclk_notch5_val"], "-gfx-clk");
+      //  } else if (index == 6) {
+      //    await setGPUProp(gpuclk_notches["gpuclk_notc61_val"], "-gfx-clk");
+      //  }
+      //}
+
+      //async function toggleGPUCLK() {
+      //  let toggle = document.getElementById("GPUCLKToggle");
+      //  let isActive = getToggleState(toggle);
+      //  await setGPUCLKTGL(!isActive);
+      //  setToggleState(toggle, !isActive);
+      //}
 
       function getClosestNotch(e, root, elements) {		  
         sliderVal = e.x / root.scrollWidth;
@@ -305,7 +379,7 @@
           style="--indent-level: 0"
         >
           <div class="gamepaddialog_FieldLabelRow_H9WOq">
-            <div class="gamepaddialog_FieldLabel_3b0U-">System Power Draw</div>
+            <div class="gamepaddialog_FieldLabel_3b0U-">Battery Power Draw</div>
             <div class="gamepaddialog_FieldChildren_14_HB">
               <div
                 class="gamepaddialog_LabelFieldValue_5Mylh"
@@ -495,6 +569,7 @@
           </div>
 	</div>
       </div>
+      <!--
       <div
         class="gamepaddialog_Field_S-_La gamepaddialog_WithFirstRow_qFXi6 gamepaddialog_WithChildrenBelow_1u5FT gamepaddialog_VerticalAlignCenter_3XNvA gamepaddialog_InlineWrapShiftsChildrenBelow_pHUb6 gamepaddialog_ChildrenWidthFixed_1ugIU gamepaddialog_ExtraPaddingOnChildrenBelow_5UO-_ gamepaddialog_StandardPadding_XRBFu gamepaddialog_HighlightOnFocus_wE4V6 Panel Focusable"
       >
@@ -503,19 +578,22 @@
         </div>
         <div class="gamepaddialog_FieldLabelRow_H9WOq">
           <div class="gamepaddialog_FieldLabel_3b0U-">Fixed GPU Clock</div>
-          <div class="gamepaddialog_FieldChildren_14_HB">
-            <div
-              id="GPUCLKToggle"
-              tabindex="0"
-	      class="gamepaddialog_Toggle_24G4g Focusable"
-            >
-              <div class="gamepaddialog_ToggleRail_2JtC3"></div>
-              <div class="gamepaddialog_ToggleSwitch_3__OD"></div>
-            </div>
+          <div class="gamepaddialog_FieldLabelRow_H9WOq">
+            <div class="gamepaddialog_FieldChildren_14_HB">
+              <div
+                id="GPUCLKToggle"
+                tabindex="0"
+	        class="gamepaddialog_Toggle_24G4g Focusable"
+                onclick="toggleGPUCLK()"
+              >
+                <div class="gamepaddialog_ToggleRail_2JtC3"></div>
+                <div class="gamepaddialog_ToggleSwitch_3__OD"></div>
+              </div>
+	    </div>
           </div>
         </div>
         <div class="gamepaddialog_FieldDescription_2OJfk">
-          Enables setting a fixed GPU Clock to the below value. May cause system instability.
+          Enables setting a fixed GPU Clock to the below value. May cause system instability. Does not persist through reboot.
         </div>
         <div class="gamepaddialog_FieldChildren_14_HB">
           <div
@@ -612,6 +690,7 @@
           </div>
 	</div>
       </div>
+      -->
     </div>
     <!-- PERSIST -->
     <div

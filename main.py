@@ -29,24 +29,16 @@ startup_time = time.time()
 
 class Plugin:
 
+    gpuclk_notches = {}
     modified_settings = False
-    persistent = True
+    persistent = False 
     sys_id = None
     tdp_delta = 2
     tdp_notches = {}
-    gpuclk_notches = {}
+    use_gpuclk = False
 
-    async def get_tdp_delta(self):
-        return self.tdp_delta
-
-    async def set_tdp_delta(self, new_delta):
-        logging.info("TDP Delta changed from "+str(self.tdp_delta)+" to "+str(new_delta))
-        self.tdp_delta = new_delta
-        self.modified_settings = True
-        return True
-
+    # GPU stuff
     async def get_gpuclk_notches(self):
-
         if not self.sys_id:
             self.sys_id = read_sys_id()
 
@@ -101,8 +93,16 @@ class Plugin:
 
         return self.gpuclk_notches
 
-    async def get_tdp_notches(self):
+    async def get_tdp_delta(self):
+        return self.tdp_delta
 
+    async def set_tdp_delta(self, new_delta):
+        logging.info("TDP Delta changed from "+str(self.tdp_delta)+" to "+str(new_delta))
+        self.tdp_delta = new_delta
+        self.modified_settings = True
+        return True
+
+    async def get_tdp_notches(self):
         if not self.sys_id:
             self.sys_id = read_sys_id()
 
@@ -157,6 +157,23 @@ class Plugin:
 
         return self.tdp_notches
 
+    async def set_gpu_prop(self, value: int, prop: str) -> bool:
+        write_gpu_prop(prop, value)
+        self.modified_settings = True
+        return True
+
+    async def get_gpu_prop(self, prop: str) -> int:
+        return read_gpu_prop(prop)
+
+    async def get_gpuclk_toggle(self) -> bool:
+        logging.info(f"Use GPUCLK is set to {self.use_gpuclk}")
+        return self.use_gpuclk
+
+    async def set_gpuclk_toggle(self, enabled: bool):
+        logging.info(f"Use GPUCLK is now: {enabled}")
+        self.use_gpuclk = enabled
+        self.save_settings(self)
+
     # Label Stuff
     async def get_version(self) -> str:
         return VERSION
@@ -165,20 +182,6 @@ class Plugin:
         if not self.sys_id:
             self.sys_id = read_sys_id()
         return self.sys_id
-
-    async def pass_thing(self, thing):
-        print("im in it")
-        logging.info(thing)
-        return True
-
-    # GPU stuff
-    async def set_gpu_prop(self, value: int, prop: str) -> bool:
-        write_gpu_prop(prop, value)
-        self.modified_settings = True
-        return True
-
-    async def get_gpu_prop(self, prop: str) -> int:
-        return read_gpu_prop(prop)
 
     # Battery stuff
     async def get_charge_now(self) -> int:
@@ -222,22 +225,23 @@ class Plugin:
 
         else:
             # apply settings
-            logging.info("Restoring settings from file")
             self.persistent = True
-            logging.info(settings)
+            logging.info(f"Restoring settings from file: {settings}")
+
             # GPU
             write_gpu_prop("a", settings["gpu"]["stapm"])
             write_gpu_prop("b", settings["gpu"]["slowppt"])
             write_gpu_prop("c", settings["gpu"]["fastppt"])
             self.tdp_delta = settings["gpu"]["tdp_delta"]
 
-    # called from main_view::onViewReady
+    # Called from main_view::onViewReady
     async def on_ready(self):
         delta = time.time() - startup_time
         logging.info(f"Front-end initialised {delta}s after startup")
 
-    # persistence
+    # Persistence stuff
     async def get_persistent(self) -> bool:
+        logging.info(f"persistent is set to {self.persistent}")
         return self.persistent
 
     async def set_persistent(self, enabled: bool):
