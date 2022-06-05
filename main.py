@@ -8,8 +8,8 @@ from subprocess import Popen, PIPE, STDOUT
 
 VERSION = "0.0.1"
 HOME_DIR = os.getenv("HOME")
-SETTINGS_LOCATION = HOME_DIR + "/.config/neo_power_settings.json"
-LOG_LOCATION = "/tmp/neo_power_tools.log"
+SETTINGS_LOCATION = HOME_DIR + "/.config//homebrew/npt-settings.json"
+LOG_LOCATION = HOME_DIR + "/.config/homebrew/npt-stdout.log"
 import logging
 
 logging.basicConfig(
@@ -26,6 +26,11 @@ logging.info(
 )
 startup_time = time.time()
 
+gpu_prop_dict = {
+        "a": "0x0000", #STAPM LIMIT
+        "b": "0x0008", #FAST PPT
+        "c": "0x0010", # SLOW PPT
+        }
 
 class Plugin:
 
@@ -257,9 +262,9 @@ class Plugin:
 
     def current_gpu_settings(self) -> dict:
         settings = dict()
-        settings["stapm"] = read_gpu_prop("STAPM LIMIT")
-        settings["slowppt"] = read_gpu_prop("PPT LIMIT SLOW")
-        settings["fastppt"] = read_gpu_prop("PPT LIMIT FAST")
+        settings["stapm"] = read_gpu_prop("0x0000")
+        settings["slowppt"] = read_gpu_prop("0x0010")
+        settings["fastppt"] = read_gpu_prop("0x0008")
         settings["tdp_delta"] = self.tdp_delta
         return settings
 
@@ -273,12 +278,11 @@ class Plugin:
         write_json(SETTINGS_LOCATION, settings)
 
 
+# Gets the current setting for the property requested
 def read_gpu_prop(prop: str) -> int:
     val = 0
-
-    # Gets the current setting for the property requested
     args = (
-        "sudo " + HOME_DIR + "/homebrew/plugins/Aya-Neo-Power-Tools/bin/ryzenadj --info"
+        "sudo " + HOME_DIR + "/homebrew/plugins/Aya-Neo-Power-Tools/bin/ryzenadj --dump-table"
     )
     ryzenadj = Popen(args, shell=True, stdout=PIPE, stderr=STDOUT)
     output = ryzenadj.stdout.read()
@@ -288,17 +292,22 @@ def read_gpu_prop(prop: str) -> int:
         current_row = str(prop_row)
         if prop in current_row:
             row_list = current_row.split("|")
-            val = int(float(row_list[2].strip()))
+            val = int(float(row_list[3].strip()))
             break
-
     return val
 
-
+# Gets the value for the property requested
 def write_gpu_prop(prop: str, value: int):
 
     # Protect against exploits from JS at runtime.
     if type(value) != int:
         raise TypeError("TypeError. value is of type " + type(value) + ", not 'int'")
+        return
+
+    # Prevent setting spam that can cause instability.
+    current_val = read_gpu_prop(gpu_prop_dict[prop])
+    if current_val == value:
+        logger.debug("Value already set for property. Ignoring.")
         return
 
     value *= 1000

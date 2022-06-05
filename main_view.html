@@ -157,7 +157,7 @@
         let TDPNotch6Lab = document.getElementById("TDPNotch6_Lab");
         TDPNotch6Lab.innerText = tdp_notches["tdp_notch6_val"].toString();
 
-        let current_tdp = await getGPUProp("PPT LIMIT FAST");
+        let current_tdp = await getGPUProp("0x0000");
         let tdp_set = Object.keys(tdp_notches).find(
           (key) => tdp_notches[key] === current_tdp
         );
