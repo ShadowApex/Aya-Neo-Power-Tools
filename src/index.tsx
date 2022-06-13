@@ -1,5 +1,6 @@
+import { render } from 'preact';
 import { SMM } from './types/SMM';
-import { body } from './view';
+import { App } from './view';
 
 const PLUGIN_ID = 'aya-neo-powertools';
 const TITLE = 'Aya Neo Power Tools';
@@ -7,16 +8,12 @@ const TITLE = 'Aya Neo Power Tools';
 export const load = (smm: SMM) => {
   console.info(`${TITLE} plugin loaded!`);
 
-  const render = async () => {
-    return body;
-  };
-
+  // Add quickaccess menu
   smm.InGameMenu.addMenuItem({
     id: PLUGIN_ID,
     title: TITLE,
-    render: async (_smm: SMM, root) => {
-      root.appendChild(await render());
-    },
+    render: async (smm: SMM, root: HTMLElement) =>
+      render(<App smm={smm} />, root),
   });
 };
 
