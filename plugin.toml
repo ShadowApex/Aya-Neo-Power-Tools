@@ -1,18 +1,19 @@
 name = "Aya Neo Power Tools"
 version = "1.0.0"
-link = "TODO"
-source = "TODO"
+link = "https://github.com/pastaq/Aya-Neo-Power-Tools"
+source = "https://github.com/pastaq/Aya-Neo-Power-Tools"
 
 [author]
 name = "Derek J. Clark"
-link = "TODO"
+link = "https://github.com/pastaq"
 
 [entrypoints]
 
 	[entrypoints.desktop]
-	library = true
+	library = false
 	menu = false
 
 	[entrypoints.deck]
 	library = false
 	menu = false
+	quick-access = true

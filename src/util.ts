@@ -45,18 +45,6 @@ function getPersistent() {
   return call_plugin_method('get_persistent', {});
 }
 
-//function setGPUCLKTGL(value) {
-//  return call_plugin_method("set_gpuclk_toggle", { enabled: value });
-//}
-
-//function getGPUClkTGL() {
-//  return call_plugin_method("get_gpuclk_toggle", {});
-//}
-
-//function getGPUClkNotches() {
-//  return call_plugin_method("get_gpuclk_notches", {});
-//}
-
 function getTDPNotches() {
   return call_plugin_method('get_tdp_notches', {});
 }
@@ -248,46 +236,6 @@ async function onSetTDPNotch(index) {
     await setGPUProp(tdp_notches['tdp_notch6_val'] + tdp_delta, 'b');
   }
 }
-
-//async function updateGPUClkNotch(e, gpuClkNotch) {
-//  let closestNotch = getClosestNotch(e, gpuClkNotch, GPUCLK_NOTCHES);
-//  onSetGPUClkNotch(closestNotch);
-//}
-
-//async function onSetGPUClkNotch(index) {
-//  let toggle = document.getElementById("GPUCLKToggle");
-//  let isActive = getToggleState(toggle);
-//  if (!isActive) {
-//    return;
-//  }
-//   currentGPUClkNotch = index;
-//   let gpuclk_notches = await getGPUClkNotches();
-//   const ROOT_ID = "GPUCLKNotch";
-//  selectNotch(ROOT_ID, index, 7);
-//  let gpuClkNotch = document.getElementById(ROOT_ID);
-//  if (index == 0) {
-//    await setGPUProp(gpuclk_notches["gpuclk_notch0_val"], "-gfx-clk");
-//  } else if (index == 1) {
-//    await setGPUProp(gpuclk_notches["gpuclk_notch1_val"], "-gfx-clk");
-//  } else if (index == 2) {
-//    await setGPUProp(gpuclk_notches["gpuclk_notch2_val"], "-gfx-clk");
-//  } else if (index == 3) {
-//    await setGPUProp(gpuclk_notches["gpuclk_notch3_val"], "-gfx-clk");
-//  } else if (index == 4) {
-//    await setGPUProp(gpuclk_notches["gpuclk_notch4_val"], "-gfx-clk");
-//  } else if (index == 5) {
-//    await setGPUProp(gpuclk_notches["gpuclk_notch5_val"], "-gfx-clk");
-//  } else if (index == 6) {
-//    await setGPUProp(gpuclk_notches["gpuclk_notc61_val"], "-gfx-clk");
-//  }
-//}
-
-//async function toggleGPUCLK() {
-//  let toggle = document.getElementById("GPUCLKToggle");
-//  let isActive = getToggleState(toggle);
-//  await setGPUCLKTGL(!isActive);
-//  setToggleState(toggle, !isActive);
-//}
 
 function getClosestNotch(e, root, elements) {
   sliderVal = e.x / root.scrollWidth;

@@ -26,11 +26,6 @@
   "resolved" "https://registry.npmjs.org/csstype/-/csstype-3.1.0.tgz"
   "version" "3.1.0"
 
-"decky-frontend-lib@^0.10.0":
-  "integrity" "sha512-yhwoSUng97U2eLyDLk3YLAw6X0aOcGpdvSJUaDsuTvksY4/MVKDjUMO8ggFl5KKCbD0JU/jRWSMeVQ5R7kwT8g=="
-  "resolved" "https://registry.npmjs.org/decky-frontend-lib/-/decky-frontend-lib-0.10.0.tgz"
-  "version" "0.10.0"
-
 "dom-chef@^5.1.0":
   "integrity" "sha512-zV1cLrO8sl7X5dWTLp6SQM/DzadfXQEgVf+sfXZqGUd709ezeEfpI8n/IgW2O8kt1sfIgZA+Us0lbKSkP4foqQ=="
   "resolved" "https://registry.npmjs.org/dom-chef/-/dom-chef-5.1.0.tgz"
