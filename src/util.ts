@@ -1,24 +1,108 @@
-//const GPUCLK_NOTCHES = 7;
-export const TDP_DELTA_NOTCHES = 4;
+import { SMM } from './types/SMM';
+
+const TDP_DELTA_NOTCHES = 4;
+const VERSION = '0.0.1';
 const TDP_NOTCHES = 7;
 const TOGGLE_ON_CLASS = 'gamepaddialog_On_3ld7T';
 
-var currentTDPNotch = 0;
-var gpuClkEnabled = false;
-var tdpDeltaSliderVal = 0;
-var tdpSliderVal = 0;
+type GPUProps = {
+  [a: string]: string;
+  b: string;
+  c: string;
+};
 
-// Python functions
-function getVersion() {
-  return call_plugin_method('get_version', {});
-}
+const gpu_prop_dict: GPUProps = {
+  a: '0x0000', // STAPM LIMIT
+  b: '0x0008', // FAST PPT
+  c: '0x0010', // SLOW PPT
+};
 
-function onViewReady() {
-  return call_plugin_method('on_ready', {});
-}
+export class PowerTools {
+  // Crankshaft Mod Manager
+  smm: SMM;
 
-function setGPUProp(value, prop) {
-  return call_plugin_method('set_gpu_prop', { value: value, prop: prop });
+  // Backend properties
+  gpuclk_notches = {};
+  modified_settings = false;
+  persistent = false;
+  sys_id = undefined;
+  tdp_delta = 2;
+  tdp_notches = {};
+  use_gpuclk = false;
+
+  // From front-end
+  currentTDPNotch = 0;
+  gpuClkEnabled = false;
+  tdpDeltaSliderVal = 0;
+  tdpSliderVal = 0;
+
+  constructor(smm: SMM) {
+    this.smm = smm;
+  }
+
+  async getHomeDir(): Promise<string> {
+    const out = await this.smm.Exec.run('bash', ['-c', 'echo $HOME']);
+    return out.stdout;
+  }
+
+  async getRyzenadj(): Promise<string> {
+    const homeDir = await this.getHomeDir();
+    return `${homeDir}/.var/app/space.crankshaft.Crankshaft/data/crankshaft/plugins/Aya-Neo-Power-Tools/bin/ryzenadj`;
+  }
+
+  // Returns the version strings
+  getVersion(): string {
+    return VERSION;
+  }
+
+  onViewReady() {
+    console.log('Front-end initialised');
+  }
+
+  // Set the given GPU property.
+  async setGPUProp(value: number, prop: string): Promise<boolean> {
+    await this.writeGPUProp(prop, value);
+    this.modified_settings = true;
+    return true;
+  }
+
+  // Read a specific GPU property.
+  async readGPUProp(prop: string): Promise<number> {
+    const ryzenadj = await this.getRyzenadj();
+    const args = `sudo ${ryzenadj} --dump-table`;
+
+    const cmd = await this.smm.Exec.run('bash', ['-c', args]);
+    const output = cmd.stdout;
+    const all_props = output.split('\n');
+
+    const prop_row = all_props.find((prop_row) => {
+      if (!prop_row.includes(prop)) {
+        return false;
+      }
+      return true;
+    });
+    const row_list = prop_row?.split('|');
+    const val = row_list![3].trim();
+
+    return parseInt(val);
+  }
+
+  // Gets the value for the property requested
+  async writeGPUProp(prop: string, value: number) {
+    // Prevent setting spam that can cause instability.
+    let current_val = await this.readGPUProp(gpu_prop_dict[prop]);
+    if (current_val === value) {
+      console.log('Value already set for property. Ignoring.');
+      return;
+    }
+
+    value *= 1000;
+    const ryzenadj = await this.getRyzenadj();
+    const args = `sudo ${ryzenadj} -${prop} ${value.toString()}`;
+    const cmd = await this.smm.Exec.run('bash', ['-c', args]);
+    const output = cmd.stdout;
+    console.log(output);
+  }
 }
 
 function getGPUProp(prop) {
@@ -72,9 +156,9 @@ async function onReady() {
     document.getElementById('persistToggle'),
     await getPersistent()
   );
-  //setToggleState(
-  //  document.getElementById("GPUCLKToggle"),
-  //  await getGPUClkTGL()
+  // setToggleState(
+  //   document.getElementById("GPUCLKToggle"),
+  //   await getGPUClkTGL()
   //);
   window.setInterval(function () {
     updateBatteryStats().then((_) => {});
@@ -102,7 +186,7 @@ function getToggleState(toggle) {
 }
 
 async function updateBatteryStats() {
-  //console.log("Updating battery stats")
+  // console.log("Updating battery stats")
   let batCapacityNow = document.getElementById('batCapacityNow');
   let batPowerDraw = document.getElementById('batPowerDraw');
   let sysIDLab = document.getElementById('sysID_Lab');
@@ -170,21 +254,21 @@ async function onReadyGPU() {
   let tdp_delta = await getTDPDelta();
   selectNotch('TDPDeltaNotch', tdp_delta - 2, 4);
 
-  //let gpuclk_notches = await getGPUClkNotches();
-  //let gpuClkNotch0Lab = document.getElementById("GPUCLKNotch0_Lab");
-  //gpuClkNotch0Lab.innerText = gpuclk_notches["gpuclk_notch0_val"].toString();
-  //let gpuClkNotch1Lab = document.getElementById("GPUCLKNotch1_Lab");
-  //gpuClkNotch1Lab.innerText = gpuclk_notches["gpuclk_notch1_val"].toString();
-  //let gpuClkNotch2Lab = document.getElementById("GPUCLKNotch2_Lab");
-  //gpuClkNotch2Lab.innerText = gpuclk_notches["gpuclk_notch2_val"].toString();
-  //let gpuClkNotch3Lab = document.getElementById("GPUCLKNotch3_Lab");
-  //gpuClkNotch3Lab.innerText = gpuclk_notches["gpuclk_notch3_val"].toString();
-  //let gpuClkNotch4Lab = document.getElementById("GPUCLKNotch4_Lab");
-  //gpuClkNotch4Lab.innerText = gpuclk_notches["gpuclk_notch4_val"].toString();
-  //let gpuClkNotch5Lab = document.getElementById("GPUCLKNotch5_Lab");
-  //gpuClkNotch5Lab.innerText = gpuclk_notches["gpuclk_notch5_val"].toString();
-  //let gpuClkNotch6Lab = document.getElementById("GPUCLKNotch6_Lab");
-  //gpuClkNotch6Lab.innerText = gpuclk_notches["gpuclk_notch6_val"].toString();
+  // let gpuclk_notches = await getGPUClkNotches();
+  // let gpuClkNotch0Lab = document.getElementById("GPUCLKNotch0_Lab");
+  // gpuClkNotch0Lab.innerText = gpuclk_notches["gpuclk_notch0_val"].toString();
+  // let gpuClkNotch1Lab = document.getElementById("GPUCLKNotch1_Lab");
+  // gpuClkNotch1Lab.innerText = gpuclk_notches["gpuclk_notch1_val"].toString();
+  // let gpuClkNotch2Lab = document.getElementById("GPUCLKNotch2_Lab");
+  // gpuClkNotch2Lab.innerText = gpuclk_notches["gpuclk_notch2_val"].toString();
+  // let gpuClkNotch3Lab = document.getElementById("GPUCLKNotch3_Lab");
+  // gpuClkNotch3Lab.innerText = gpuclk_notches["gpuclk_notch3_val"].toString();
+  // let gpuClkNotch4Lab = document.getElementById("GPUCLKNotch4_Lab");
+  // gpuClkNotch4Lab.innerText = gpuclk_notches["gpuclk_notch4_val"].toString();
+  // let gpuClkNotch5Lab = document.getElementById("GPUCLKNotch5_Lab");
+  // gpuClkNotch5Lab.innerText = gpuclk_notches["gpuclk_notch5_val"].toString();
+  // let gpuClkNotch6Lab = document.getElementById("GPUCLKNotch6_Lab");
+  // gpuClkNotch6Lab.innerText = gpuclk_notches["gpuclk_notch6_val"].toString();
 }
 
 async function updateTDPNotch(e, tdpNotch) {
