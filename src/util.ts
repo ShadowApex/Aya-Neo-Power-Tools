@@ -17,15 +17,25 @@ const gpu_prop_dict: GPUProps = {
   c: '0x0010', // SLOW PPT
 };
 
+interface GPUNotches {
+  gpuclk_notch0_val?: number;
+  gpuclk_notch1_val?: number;
+  gpuclk_notch2_val?: number;
+  gpuclk_notch3_val?: number;
+  gpuclk_notch4_val?: number;
+  gpuclk_notch5_val?: number;
+  gpuclk_notch6_val?: number;
+}
+
 export class PowerTools {
   // Crankshaft Mod Manager
   smm: SMM;
 
   // Backend properties
-  gpuclk_notches = {};
+  gpuclk_notches: GPUNotches = {};
   modified_settings = false;
   persistent = false;
-  sys_id = undefined;
+  sys_id = '';
   tdp_delta = 2;
   tdp_notches = {};
   use_gpuclk = false;
@@ -57,6 +67,74 @@ export class PowerTools {
 
   onViewReady() {
     console.log('Front-end initialised');
+  }
+
+  async readSysID(): Promise<string> {
+    return await this.smm.FS.readFile(
+      '/sys/devices/virtual/dmi/id/product_name'
+    );
+  }
+
+  async getGPUClkNotches(): Promise<GPUNotches> {
+    if (this.sys_id === '') {
+      this.sys_id = await this.readSysID();
+    }
+
+    // Founders & 2021 MAX GPU CLK 1500, increment by 200Mhz
+    const incr200Mhz = [
+      'AYANEO 2021',
+      'AYA NEO 2021',
+      'AYANEO FOUNDERS',
+      'AYA NEO FOUNDERS',
+      'AYANEO FOUNDER',
+      'AYA NEO FOUNDER',
+    ];
+    if (incr200Mhz.includes(this.sys_id)) {
+      this.gpuclk_notches.gpuclk_notch0_val = 200;
+      this.gpuclk_notches.gpuclk_notch1_val = 400;
+      this.gpuclk_notches.gpuclk_notch2_val = 600;
+      this.gpuclk_notches.gpuclk_notch3_val = 800;
+      this.gpuclk_notches.gpuclk_notch4_val = 1000;
+      this.gpuclk_notches.gpuclk_notch5_val = 1200;
+      this.gpuclk_notches.gpuclk_notch6_val = 1500;
+    }
+
+    // 2021 PRO MAX GPU CLK 1750, increment by 250Mhz
+    const incr250Mhz = [
+      'AYANEO 2021 Pro Retro Power',
+      'AYA NEO 2021 Pro Retro Power',
+      'AYANEO 2021 Pro',
+      'AYA NEO 2021 Pro',
+    ];
+    if (incr250Mhz.includes(this.sys_id)) {
+      this.gpuclk_notches.gpuclk_notch0_val = 250;
+      this.gpuclk_notches.gpuclk_notch1_val = 500;
+      this.gpuclk_notches.gpuclk_notch2_val = 750;
+      this.gpuclk_notches.gpuclk_notch3_val = 1000;
+      this.gpuclk_notches.gpuclk_notch4_val = 1250;
+      this.gpuclk_notches.gpuclk_notch5_val = 1500;
+      this.gpuclk_notches.gpuclk_notch6_val = 1750;
+    }
+    // NEXT MAX GPU CLK 2000, increment by 300Mhz
+    const incr300Mhz = [
+      'NEXT',
+      'AYANEO NEXT',
+      'AYA NEO NEXT',
+      'NEXT Pro',
+      'AYANEO NEXT Pro',
+      'AYA NEO NEXT Pro',
+    ];
+    if (incr300Mhz.includes(this.sys_id)) {
+      this.gpuclk_notches.gpuclk_notch0_val = 250;
+      this.gpuclk_notches.gpuclk_notch1_val = 500;
+      this.gpuclk_notches.gpuclk_notch2_val = 750;
+      this.gpuclk_notches.gpuclk_notch3_val = 1000;
+      this.gpuclk_notches.gpuclk_notch4_val = 1250;
+      this.gpuclk_notches.gpuclk_notch5_val = 1500;
+      this.gpuclk_notches.gpuclk_notch6_val = 1750;
+    }
+
+    return this.gpuclk_notches;
   }
 
   // Set the given GPU property.
